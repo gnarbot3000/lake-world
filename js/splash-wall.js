@@ -1,28 +1,27 @@
 (function () {
   var tiles = [
     "img/slalom-wake.jpg",
-    "img/dock-skis.jpg",
+    "img/kirk-slalom.jpg",
     "img/kneeboard.jpg",
-    "img/kiteboard.jpg",
+    "img/unsplash-boat-pull.jpg",
     "img/course.jpg",
-    "img/slalom-cut.jpg",
+    "img/franklin-slalom.jpg",
     "img/buoys.jpg",
-    "img/wingfoil.jpg",
+    "img/unsplash-wakeboard.jpg",
     "img/boat.jpg",
-    "img/twin-ski.jpg",
+    "img/mead-slalom.jpg",
     "img/spray.jpg",
-    "img/dock-dusk.jpg",
-    "img/ski-boat-pull.jpg",
-    "img/jump-ramp.jpg",
-    "img/kneeboard-turn.jpg",
-    "img/course-overhead.jpg",
-    "img/handle-close.jpg",
-    "img/ski-edge.jpg"
+    "img/putrajaya-ski.jpg",
+    "img/unsplash-ski.jpg",
+    "img/wakeboard-boat.jpg",
+    "img/unsplash-slalom.jpg",
+    "img/ski-jump.jpg",
+    "img/wakesurf-mead.jpg",
+    "img/barefoot-ski.jpg",
+    "img/mead-slalom-2.jpg",
+    "img/unsplash-wakeboard-2.jpg"
   ];
-  var circles = {
-    "img/buoys.jpg": true,
-    "img/handle-close.jpg": true
-  };
+  var circles = { "img/buoys.jpg": true };
   var wall = document.querySelector(".poster-wall");
   if (!wall) return;
   wall.innerHTML = "";
