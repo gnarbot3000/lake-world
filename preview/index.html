@@ -31,6 +31,7 @@
       </div>
       <div class="mast-row mast-auth" id="mast-auth" hidden>
         <span id="mast-user-email"></span>
+        <a class="mast-admin-link" id="mast-admin-link" href="admin.html" hidden>Club</a>
         <button type="button" id="signout-btn">Sign Out</button>
       </div>
       <div class="mast-row mast-tools">
@@ -52,6 +53,16 @@
     </nav>
 
     <p class="club-signin-note" id="club-signin-note" hidden>Sign in to see Ski Paradise Cleveland.</p>
+    <p class="club-error" id="consume-error" hidden></p>
+    <section class="gate-card" id="pending-gate" hidden>
+      <h2 class="gate-title">Waiting for approval</h2>
+      <p class="legend">You are signed in. An admin of Ski Paradise Cleveland still has to approve you before you can see the club roster.</p>
+    </section>
+    <section class="gate-card" id="denied-gate" hidden>
+      <h2 class="gate-title">Not approved</h2>
+      <p class="legend">This invite was not approved. Ask a member for a new link.</p>
+    </section>
+    <p class="club-signin-note" id="invite-only-note" hidden>Ski Paradise Cleveland is invite-only. Ask a member for a link.</p>
 
     <main>
       <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
@@ -75,14 +86,27 @@
       </section>
 
       <section class="panel is-active" id="panel-slalom" role="tabpanel" aria-labelledby="tab-slalom" data-sport="slalom">
-        <div class="roster-block" id="junior-block">
-          <form class="add-skier-form" id="add-junior-form" autocomplete="off">
-            <label class="chip-label" for="add-junior-name">Add junior member</label>
+        <div class="roster-block" id="junior-block" hidden></div>
+
+        <div class="roster-block club-tools" id="club-tools" hidden>
+          <form class="add-skier-form" id="create-invite-form" autocomplete="off">
+            <label class="chip-label" for="invite-name">Invite someone</label>
             <div class="add-row">
-              <input id="add-junior-name" type="text" maxlength="60" placeholder="Name" required>
-              <button type="submit" class="btn-primary">Add junior member</button>
+              <input id="invite-name" type="text" maxlength="80" placeholder="Name" required>
+              <button type="submit" class="btn-primary">Create invite link</button>
+            </div>
+            <div class="invite-kind" role="group" aria-label="Invite type">
+              <label><input type="radio" name="invite-kind" value="adult" checked> Adult</label>
+              <label><input type="radio" name="invite-kind" value="junior"> Junior</label>
             </div>
           </form>
+          <div class="invite-link-box" id="invite-link-row" hidden>
+            <label class="chip-label" for="invite-link-field">Invite link</label>
+            <input id="invite-link-field" type="text" readonly>
+            <button type="button" class="btn-ghost" id="copy-invite-btn">Copy link</button>
+          </div>
+          <p class="legend">One-time link. Send it yourself — lake.world does not email invites. They stay pending until an admin approves. Juniors need a parent signed in to accept.</p>
+          <div id="pending-juniors" hidden></div>
         </div>
 
         <p class="legend">Tap a buoy count to log this set’s best run.</p>
@@ -117,6 +141,12 @@
             <ul class="board-list" id="session-list"></ul>
           </div>
           <p class="shelf-empty" id="session-empty">No session yet.</p>
+        </div>
+
+        <div class="board-block" id="club-roster-block" hidden>
+          <h2 class="board-title">Roster</h2>
+          <p class="board-kicker">Ski Paradise Cleveland</p>
+          <ul class="roster-names" id="club-roster-list"></ul>
         </div>
 
         <div class="board-block" id="club-board">

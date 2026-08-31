@@ -2,7 +2,7 @@
 
 Product brand: **lake.world** (not “Lake World”). Category: watersports. Local-first logbook for **slalom skiing** (main, best run of a set) and **kneeboarding** (secondary tricks). Self-report only. Splash Sign In is optional; Preview still works as a guest.
 
-Club is hardcoded: **Ski Paradise Cleveland** (first / only club). This browser is the club logbook for now — a members-only roster, no other clubs. Guest Preview is personal-only. A signed-in lake.world account namespaces the same local save and unlocks the club.
+Club is hardcoded: **Ski Paradise Cleveland** (first / only club). No public create-a-club. Membership is **invite + admin approval** in lake.world Supabase. Guest Preview is personal-only. A signed-in **approved** member namespaces the local save and unlocks the club roster. Pending users see a waiting screen, not the roster.
 
 Look: light outdoor dock log for noon on the water — UDisc/Hevy-inspired, high-contrast. Not a dark night-lake theme.
 
@@ -32,19 +32,21 @@ The Mini opens on **Slalom**. Kneeboard is the second tab. Switching skiers swit
 - Optional **still photo or short video** on a landed trick. Pick a file, preview it, remove it. Media is stored in this browser’s IndexedDB only — not localStorage, not the cloud. Huge videos are still attempted; if the browser refuses, you get a preview warning.
 - Progress counts (landed / total · percent).
 
-## Club roster
+## Club roster (invite-only)
 
-Who is skiing is a **dropdown** in the header (slalom and kneeboard), not chips — 30 names is too many for chips. Pick a name to switch `currentPersonId`; logs go to that person. Names sort last, then first. If the signed-in email matches a club member (Joel Hageman for `joel.hageman@gmail.com`), that member is auto-selected. Logging a set with no name toasts **Add a name to hit the board**.
+Who is skiing is a **dropdown** in the header. Approved members log **their own** slalom/kneeboard sets and **their juniors’** sets only — not other adults. Names sort last, then first. Logging a set with no name toasts **Add a name to hit the board**. There is no email auto-match onto a hardcoded roster.
 
-**Add junior member** takes a name only (no email). It creates a person `{ junior: true, parentId: signed-in user or current adult, seed: false }` with empty slalom/kneeboard. Juniors show in this member’s dropdown as `Owen Hageman (junior)` and their sets appear on the club board / latest session / Best 10 like anyone else. Do not pre-seed juniors; the feature is the add flow. Blank names and duplicate names (case-insensitive, trimmed) are refused. The old unrestricted **Add skier** is gone so guests cannot invent club members on the hosted site. `file://` may still add juniors locally.
+**Invites:** any approved member types a name (adult or junior), copies a one-time link, and sends it however they want. lake.world does not email invites. The invitee signs in / creates an account via `invite.html?token=` (also `preview/index.html?invite=` and `/?invite=`). They then sit **pending** until an admin approves. Pending signed-in users must not see the club roster.
 
-On first signed-in or `file://` load, the **30 real Ski Paradise Cleveland members** are added once and tagged `seed: true` so a reload does not duplicate them. They have **no invented slalom scores, kneeboard tricks, or trophies** — empty logs until someone actually records a set. Emails are stored on the person for auto-match and are not shown in the UI. The current skier (usually `p1`) and any non-seed people / juniors you added are kept. If a non-seed person already has the same display name (for example Joel already named himself Joel Hageman), that seed name is skipped (`nameTaken`). Unique ids look like `seed-don-lydon`.
+**Juniors** also need an invite. A parent accepts while signed in. The junior stays pending until admin approval and is tied to that parent. After approval they show in that parent’s dropdown as `Owen Hageman (junior)`.
 
-Roster lives in `preview/club-roster.js`. Hosted http(s) loads that file only when `window.LAKE_USER_ID` is set (signed in). Guests on github.io / lake.world never request it. `file://` (Desktop Mini) always loads it so Joel can test without login. Names will still exist as a static GitHub Pages file if someone guesses the URL; that is acceptable for this Mini.
+**First admin:** when `joel.hageman@gmail.com` signs in and the club has no admins yet, that account becomes the first admin and an approved member named Joel Hageman. He adds other admins in `preview/admin.html`. Do not hardcode extra admin emails. Non-admin members can create named invites; they cannot approve.
 
-Existing browsers that still have the old demo skiers or the previous club roster (including RM Voiers, Jackie Matus, and the Zangmeisters) migrate automatically: `SEED_GEN` is `ski-paradise-cleveland-1`, persisted as `state.seedGen`. When stored `seedGen` does not match, all `people` with `seed === true` are stripped, the 30 club members are inserted, and the new gen is saved.
+The hosted Mini does **not** seed the old 30-name list. `preview/club-roster.js` is unused and empty. `SEED_GEN` is `invite-only-1`: leftover `seed: true` people are stripped and not replaced.
 
-**Privacy (hosted):** other members’ names, club board, latest session (other skiers), and Best 10 are members-only. A guest on https sees a personal Mini only — themselves, no club names, those blocks empty/hidden, and a note **Sign in to see Ski Paradise Cleveland.** The splash Preview link stays; it is personal-only.
+**Privacy (hosted):** guest Preview on https is personal-only — themselves, no live club roster, boards hidden, note **Sign in to see Ski Paradise Cleveland.** `file://` Mini stays a personal logbook without the live club roster. Only invited **and** admin-approved people appear on roster / board / dropdown.
+
+Roster / invites / admins live in lake.world Supabase. Slalom/kneeboard **sets stay on this device** in this PR (localStorage + IndexedDB). The club board on a given browser only shows sets logged there for you and your juniors.
 
 ## Latest session vs club board
 
@@ -56,7 +58,7 @@ Two slalom boards, different windows:
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there — no extra hunt.
 
-Slalom tab order: junior add → line / speed / best-run chips + personal best → latest session → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
+Slalom tab order: invite tools (approved members) → line / speed / best-run chips + personal best → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
 
 ## Slalom — best of the set
 
@@ -111,7 +113,7 @@ Each trophy stores `id`, `title`, and earned date.
 
 ## What is stored
 
-- Club roster lives in this browser’s `localStorage` (`nrs-ski-lake-tricks-v2`): `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `seed` for club members, optional `email` for auto-match, optional `junior` / `parentId`), `currentPersonId`, club-wide `units` (`mph` | `kph`), `club`, and `seedGen` (currently `ski-paradise-cleveland-1`). Older `ticks` keys are ignored. Guest key is `nrs-ski-lake-tricks-v2`; signed-in key appends `-<user id>`.
+- Membership lives in Supabase (`members`, `club_admins`, `invites`). Local `localStorage` (`nrs-ski-lake-tricks-v2`) still holds this device’s people/logs: `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `memberId`, optional `junior` / `parentId`), `currentPersonId`, club-wide `units` (`mph` | `kph`), `club`, and `seedGen` (currently `invite-only-1`). Guest key is `nrs-ski-lake-tricks-v2`; signed-in key appends `-<user id>`.
 - Photos and videos live in IndexedDB (`nrs-ski-lake-tricks-v2`), keyed per skier. They never leave this browser.
 - Clearing site data for the file will wipe the roster, logbook, score, trophies, slalom sets, and media.
 

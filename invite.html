@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <title>lake.world invite</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script src="js/ga.js"></script>
+  <link rel="stylesheet" href="preview/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="mast-row">
+        <div class="brand" title="lake.world">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24">
+              <rect width="28" height="28" rx="7" fill="#28203C"/>
+              <circle cx="14" cy="14" r="5" fill="#FC5200"/>
+            </svg>
+          </div>
+          <p class="wordmark">lake.world</p>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="gate-card" id="invite-card">
+        <p class="board-kicker">Ski Paradise Cleveland</p>
+        <h1 class="gate-title" id="invite-title">Club invite</h1>
+        <p class="legend" id="invite-copy">Open a valid invite link to join.</p>
+        <p class="club-error" id="invite-error" hidden></p>
+        <form id="login-form" hidden>
+          <label class="chip-label" for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="username" placeholder="Email">
+          <label class="chip-label" for="password">Password</label>
+          <input id="password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="Password">
+          <button type="submit" class="btn-primary" id="signin-btn">Sign In</button>
+          <button type="button" class="btn-ghost" id="signup-btn">Create account</button>
+        </form>
+        <button type="button" class="btn-primary" id="accept-btn" hidden>Accept invite</button>
+        <p class="legend" id="signed-as" hidden></p>
+        <a class="preview-nav" href="preview/index.html">Open Mini</a>
+      </section>
+    </main>
+    <footer>
+      <p>lake.world · Ski Paradise Cleveland</p>
+    </footer>
+  </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/club.js"></script>
+  <script src="js/invite-page.js"></script>
+</body>
+</html>

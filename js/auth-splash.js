@@ -19,8 +19,18 @@
     errorDiv.style.display = msg ? "block" : "none";
   }
 
+  function inviteQuery() {
+    try {
+      var q = new URLSearchParams(location.search || "");
+      var tok = (q.get("invite") || q.get("token") || "").trim();
+      return tok ? ("?invite=" + encodeURIComponent(tok)) : "";
+    } catch (err) {
+      return "";
+    }
+  }
+
   function goPreview() {
-    location.href = "preview/index.html";
+    location.href = "preview/index.html" + inviteQuery();
   }
 
   function emailRedirectTo() {
@@ -117,6 +127,11 @@
     } catch (err) {
       sb = null;
     }
+  }
+
+  if (inviteQuery()) {
+    var hero = document.querySelector(".hero p");
+    if (hero) hero.textContent = "You have a Ski Paradise Cleveland invite. Sign in or create an account.";
   }
 
   if (sb) {

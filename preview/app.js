@@ -39,18 +39,31 @@
   var BUOY_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6];
   var DEFAULT_PASS = { off: 15, mph: 28 };
 
-  var SEED_GEN = "ski-paradise-cleveland-1";
+  var SEED_GEN = "invite-only-1";
 
   function clubRoster() {
-    var list = window.LAKE_CLUB_ROSTER;
-    return Array.isArray(list) ? list : [];
+    return [];
+  }
+
+  function clubState() {
+    return window.LAKE_CLUB || {};
   }
 
   function clubVisible() {
-    try {
-      if (location.protocol === "file:") return true;
-    } catch (err) {}
-    return !!(window.LAKE_USER_ID);
+    return clubState().status === "approved";
+  }
+
+  function myMember() {
+    return clubState().me || null;
+  }
+
+  function canLogFor(person) {
+    if (!clubVisible()) return true;
+    var me = myMember();
+    if (!me || !person) return false;
+    if (person.memberId && person.memberId === me.id) return true;
+    if (person.junior === true && person.parentId === me.id) return true;
+    return false;
   }
 
 
@@ -121,70 +134,89 @@
 
   function ensureSeedSkiers() {
     if (!state || !Array.isArray(state.people)) return;
-    var changed = false;
+    if (state.seedGen === SEED_GEN && !hasSeedPeople(state.people)) return;
+    var kept = [];
+    var i;
+    for (i = 0; i < state.people.length; i++) {
+      if (state.people[i] && state.people[i].seed === true) continue;
+      kept.push(state.people[i]);
+    }
+    if (!kept.length) kept = [emptyPerson("p1", "")];
+    state.people = kept;
+    var found = false;
+    for (i = 0; i < kept.length; i++) {
+      if (kept[i].id === state.currentPersonId) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) state.currentPersonId = kept[0].id;
+    state.seedGen = SEED_GEN;
+    save(state);
+  }
+
+  function findOrMakeSelf(me) {
+    var i;
+    var p;
+    for (i = 0; i < state.people.length; i++) {
+      p = state.people[i];
+      if (p.memberId === me.id || p.id === me.id) return p;
+    }
+    var adults = [];
+    for (i = 0; i < state.people.length; i++) {
+      p = state.people[i];
+      if (p && p.junior !== true && !p.memberId && p.seed !== true) adults.push(p);
+    }
+    if (adults.length === 1) return adults[0];
+    p = emptyPerson(me.id, me.display_name);
+    state.people.push(p);
+    return p;
+  }
+
+  function syncClubPeople() {
+    if (!clubVisible()) return;
+    var me = myMember();
+    if (!me || !me.id) return;
+    var self = findOrMakeSelf(me);
+    self.memberId = me.id;
+    self.junior = false;
+    if (me.display_name) self.name = me.display_name;
+    var juniors = clubState().juniors || [];
+    var seen = {};
     var i;
     var j;
-    if (state.seedGen !== SEED_GEN) {
-      var kept = [];
-      for (i = 0; i < state.people.length; i++) {
-        if (state.people[i] && state.people[i].seed === true) continue;
-        kept.push(state.people[i]);
-      }
-      if (!kept.length) {
-        kept = [emptyPerson("p1", "")];
-      }
-      state.people = kept;
-      var found = false;
-      for (i = 0; i < kept.length; i++) {
-        if (kept[i].id === state.currentPersonId) {
-          found = true;
+    var jp;
+    for (i = 0; i < juniors.length; i++) {
+      j = juniors[i];
+      if (!j || j.status !== "approved") continue;
+      seen[j.id] = true;
+      jp = null;
+      var k;
+      for (k = 0; k < state.people.length; k++) {
+        if (state.people[k].memberId === j.id || state.people[k].id === j.id) {
+          jp = state.people[k];
           break;
         }
       }
-      if (!found) state.currentPersonId = kept[0].id;
-      state.seedGen = SEED_GEN;
-      changed = true;
-    } else if (hasSeedPeople(state.people)) {
-      return;
-    }
-    if (!clubVisible()) {
-      if (changed) save(state);
-      return;
-    }
-    var seeds = clubRoster();
-    for (i = 0; i < seeds.length; i++) {
-      var spec = seeds[i];
-      var exists = false;
-      for (j = 0; j < state.people.length; j++) {
-        if (state.people[j].id === spec.id) {
-          exists = true;
-          if (spec.email && !state.people[j].email) {
-            state.people[j].email = spec.email;
-            changed = true;
-          }
-          break;
-        }
+      if (!jp) {
+        jp = emptyPerson(j.id, j.display_name);
+        state.people.push(jp);
       }
-      if (exists) continue;
-      if (nameTaken(spec.name)) {
-        if (spec.email) {
-          var want = String(spec.name || "").replace(/\s+/g, " ").trim().toLowerCase();
-          for (j = 0; j < state.people.length; j++) {
-            if (personNameOf(state.people[j]).toLowerCase() === want) {
-              if (!state.people[j].email) {
-                state.people[j].email = spec.email;
-                changed = true;
-              }
-              break;
-            }
-          }
-        }
-        continue;
-      }
-      state.people.push(makeSeedPerson(spec));
-      changed = true;
+      jp.memberId = j.id;
+      jp.junior = true;
+      jp.parentId = me.id;
+      if (j.display_name) jp.name = j.display_name;
     }
-    if (changed) save(state);
+    if (!state.currentPersonId) state.currentPersonId = self.id;
+    var curOk = false;
+    for (i = 0; i < state.people.length; i++) {
+      if (state.people[i].id === state.currentPersonId && canLogFor(state.people[i])) {
+        curOk = true;
+        break;
+      }
+    }
+    if (!curOk) state.currentPersonId = self.id;
+    save(state);
   }
 
   function copySport(src) {
@@ -236,6 +268,7 @@
     if (src.seed === true) p.seed = true;
     if (src.junior === true) p.junior = true;
     if (typeof src.parentId === "string" && src.parentId) p.parentId = src.parentId;
+    if (typeof src.memberId === "string" && src.memberId) p.memberId = src.memberId;
     if (typeof src.email === "string" && src.email) p.email = src.email;
     return p;
   }
@@ -382,11 +415,12 @@
   }
 
   function currentAdultId() {
-    if (window.LAKE_USER_ID) return window.LAKE_USER_ID;
+    var me = myMember();
+    if (me && me.id) return me.id;
     var cur = currentPerson();
     if (!cur) return "";
     if (cur.junior === true && cur.parentId) return cur.parentId;
-    return cur.id;
+    return cur.memberId || cur.id;
   }
 
   function peopleForDropdown() {
@@ -399,20 +433,16 @@
       if (cur) out.push(cur);
       return out;
     }
-    var adultId = currentAdultId();
-    var userId = window.LAKE_USER_ID || "";
+    var me = myMember();
+    var meId = me && me.id;
     for (i = 0; i < people.length; i++) {
       var p = people[i];
       if (!p || !p.id || seen[p.id]) continue;
-      var keep = false;
-      if (p.seed === true) keep = true;
-      else if (p.junior === true) {
-        if (p.parentId && (p.parentId === adultId || (userId && p.parentId === userId))) keep = true;
-      } else if (cur && p.id === cur.id) keep = true;
-      if (!keep) continue;
+      if (!canLogFor(p)) continue;
       seen[p.id] = true;
       out.push(p);
     }
+    if (!out.length && cur) out.push(cur);
     out.sort(comparePeopleByName);
     return out;
   }
@@ -655,9 +685,20 @@
     return pickBestSet(daySets);
   }
 
+  function clubPeople() {
+    var people = state.people || [];
+    if (!clubVisible()) return people;
+    var out = [];
+    var i;
+    for (i = 0; i < people.length; i++) {
+      if (canLogFor(people[i])) out.push(people[i]);
+    }
+    return out;
+  }
+
   function allSets() {
     var out = [];
-    var people = state.people || [];
+    var people = clubPeople();
     var i, j;
     for (i = 0; i < people.length; i++) {
       var p = people[i];
@@ -680,7 +721,7 @@
 
   function latestSessionDate() {
     var max = "";
-    var people = state.people || [];
+    var people = clubPeople();
     var i, j;
     for (i = 0; i < people.length; i++) {
       var sets = people[i].slalomSets || [];
@@ -931,14 +972,17 @@
     if (!id) return;
     var people = state.people || [];
     var found = false;
+    var target = null;
     var i;
     for (i = 0; i < people.length; i++) {
       if (people[i].id === id) {
         found = true;
+        target = people[i];
         break;
       }
     }
     if (!found) return;
+    if (!canLogFor(target)) return;
     state.currentPersonId = id;
     save(state);
     paintNameField();
@@ -973,7 +1017,7 @@
 
   var state = load();
   ensureSeedSkiers();
-  autoSelectMemberByEmail();
+  syncClubPeople();
 
   /* ---- IndexedDB media (file:// safe: no modules, no server fetch) ---- */
 
@@ -1296,6 +1340,10 @@
 
   function logSet(buoys) {
     var p = currentPerson();
+    if (!canLogFor(p)) {
+      showToast("log", "You can only log your sets and your juniors.");
+      return;
+    }
     if (!personNameOf(p)) {
       showToast("log", "Add a name to hit the board");
       focusNameField();
@@ -1344,12 +1392,15 @@
     if (session) session.hidden = !vis;
     if (club) club.hidden = !vis;
     if (best) best.hidden = !vis;
-    if (junior) junior.hidden = !vis;
+    if (junior) junior.hidden = true;
     if (kicker) kicker.textContent = CLUB;
     if (footer) {
       footer.textContent = vis
-        ? "lake.world · " + CLUB + " · this device only"
+        ? "lake.world · " + CLUB + " · sets stay on this device"
         : "lake.world · this device only";
+    }
+    if (window.LakeClubUi && typeof window.LakeClubUi.paint === "function") {
+      window.LakeClubUi.paint();
     }
   }
 
@@ -1406,7 +1457,7 @@
       if (head) head.hidden = true;
       return;
     }
-    var people = state.people || [];
+    var people = clubPeople();
     var rows = [];
     var i;
     for (i = 0; i < people.length; i++) {
@@ -1452,7 +1503,7 @@
       if (head) head.hidden = true;
       return;
     }
-    var people = state.people || [];
+    var people = clubPeople();
     var rows = [];
     var i;
     for (i = 0; i < people.length; i++) {
@@ -1633,6 +1684,7 @@
   }
 
   function addJunior(raw) {
+    return false;
     if (!clubVisible()) return false;
     var name = String(raw || "").replace(/\s+/g, " ").trim();
     if (!name) return false;

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <title>lake.world admin</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <script src="../js/ga.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="mast-row">
+        <div class="brand" title="lake.world">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24">
+              <rect width="28" height="28" rx="7" fill="#28203C"/>
+              <circle cx="14" cy="14" r="5" fill="#FC5200"/>
+            </svg>
+          </div>
+          <p class="wordmark">lake.world</p>
+        </div>
+      </div>
+      <div class="mast-row mast-auth" id="mast-auth" hidden>
+        <span id="mast-user-email"></span>
+        <a class="mast-admin-link" href="index.html">Mini</a>
+        <button type="button" id="signout-btn">Sign Out</button>
+      </div>
+    </header>
+    <main>
+      <p class="club-error" id="admin-error" hidden></p>
+      <section class="gate-card" id="admin-gate" hidden>
+        <h1 class="gate-title">Club admin</h1>
+        <p class="legend" id="admin-gate-copy">Sign in from lake.world to manage Ski Paradise Cleveland.</p>
+        <a class="preview-nav" href="../index.html">Sign in</a>
+      </section>
+      <div id="admin-app" hidden>
+        <h1 class="gate-title">Ski Paradise Cleveland</h1>
+        <p class="legend" id="admin-role"></p>
+
+        <section class="board-block" id="invite-section">
+          <h2 class="board-title">Create invite</h2>
+          <p class="board-kicker">Named, one-time link. The site does not send email.</p>
+          <form class="add-skier-form" id="create-invite-form" autocomplete="off">
+            <label class="chip-label" for="invite-name">Name</label>
+            <div class="add-row">
+              <input id="invite-name" type="text" maxlength="80" placeholder="Name" required>
+              <button type="submit" class="btn-primary">Create link</button>
+            </div>
+            <div class="invite-kind" role="group" aria-label="Invite type">
+              <label><input type="radio" name="invite-kind" value="adult" checked> Adult</label>
+              <label><input type="radio" name="invite-kind" value="junior"> Junior</label>
+            </div>
+          </form>
+          <div class="invite-link-box" id="invite-link-row" hidden>
+            <label class="chip-label" for="invite-link-field">Invite link</label>
+            <input id="invite-link-field" type="text" readonly>
+            <button type="button" class="btn-ghost" id="copy-invite-btn">Copy link</button>
+          </div>
+        </section>
+
+        <section class="board-block" id="open-invites-section">
+          <h2 class="board-title">Open invites</h2>
+          <ul class="admin-list" id="open-invites-list"></ul>
+          <p class="shelf-empty" id="open-invites-empty">No open invites.</p>
+        </section>
+
+        <section class="board-block" id="pending-section" hidden>
+          <h2 class="board-title">Pending</h2>
+          <ul class="admin-list" id="pending-list"></ul>
+          <p class="shelf-empty" id="pending-empty">No one waiting.</p>
+        </section>
+
+        <section class="board-block" id="members-section">
+          <h2 class="board-title">Members</h2>
+          <ul class="admin-list" id="members-list"></ul>
+          <p class="shelf-empty" id="members-empty">No approved members yet.</p>
+        </section>
+
+        <section class="board-block" id="admins-section" hidden>
+          <h2 class="board-title">Admins</h2>
+          <ul class="admin-list" id="admins-list"></ul>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <p>lake.world · Ski Paradise Cleveland</p>
+    </footer>
+  </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/club.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
