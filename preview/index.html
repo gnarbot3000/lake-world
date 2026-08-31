@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <title>lake.world</title>
+  <script src="../js/ga.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="mast-row">
+        <div class="brand" title="lake.world">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24">
+              <rect width="28" height="28" rx="7" fill="#28203C"/>
+              <circle cx="14" cy="14" r="5" fill="#FC5200"/>
+            </svg>
+          </div>
+          <p class="wordmark">lake.world</p>
+        </div>
+        <label class="sr-only" for="person-name">Skier name</label>
+        <input id="person-name" type="text" maxlength="60" placeholder="Skier name" autocomplete="nickname">
+      </div>
+      <div class="mast-row mast-tools">
+        <div class="units-seg" role="group" aria-label="Speed units">
+          <button type="button" id="units-mph" data-act="units" data-units="mph" aria-pressed="true">mph</button>
+          <button type="button" id="units-kph" data-act="units" data-units="kph" aria-pressed="false">kph</button>
+        </div>
+        <p class="stat-pill slalom-pill" id="slalom-score">
+          <span class="stat-main" id="slalom-score-main">Slalom · —</span>
+          <span class="stat-sub" id="slalom-score-sub" hidden></span>
+        </p>
+        <p class="stat-pill" id="person-score"><span class="stat-main">Score · 0</span></p>
+      </div>
+    </header>
+
+    <nav class="sport-tabs" role="tablist" aria-label="Sports">
+      <button type="button" class="tab is-active" role="tab" id="tab-slalom" aria-selected="true" aria-controls="panel-slalom" data-sport="slalom">Slalom</button>
+      <button type="button" class="tab" role="tab" id="tab-kneeboard" aria-selected="false" aria-controls="panel-kneeboard" data-sport="kneeboard">Kneeboard</button>
+    </nav>
+
+    <main>
+      <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
+        <div class="progress-card" data-progress="kneeboard">
+          <div class="progress-meta">
+            <h2>Kneeboard tricks</h2>
+            <p class="progress-counts"></p>
+          </div>
+          <div class="lake-meter" aria-hidden="true"><span class="lake-fill"></span></div>
+        </div>
+        <p class="legend">Easy unlocks once. Hard keeps a logbook.</p>
+        <ol class="trick-list" id="list-kneeboard"></ol>
+        <form class="add-form" data-sport="kneeboard" autocomplete="off">
+          <label for="add-kneeboard">Add a trick</label>
+          <div class="add-row">
+            <input id="add-kneeboard" name="name" type="text" maxlength="80" placeholder="e.g. standing up on the kneeboard" required>
+            <label class="hard-opt"><input type="checkbox" name="hard"> Hard</label>
+          </div>
+          <button type="submit" class="btn-primary">Add trick</button>
+        </form>
+      </section>
+
+      <section class="panel is-active" id="panel-slalom" role="tabpanel" aria-labelledby="tab-slalom" data-sport="slalom">
+        <div class="roster-block">
+          <p class="chip-label" id="skier-label">Who is skiing</p>
+          <div class="chip-row" role="group" aria-labelledby="skier-label" id="skier-chips"></div>
+          <form class="add-skier-form" id="add-skier-form" autocomplete="off">
+            <label class="sr-only" for="add-skier-name">Add skier</label>
+            <div class="add-row">
+              <input id="add-skier-name" type="text" maxlength="60" placeholder="Name" required>
+              <button type="submit" class="btn-primary">Add skier</button>
+            </div>
+          </form>
+        </div>
+
+        <p class="legend">Tap a buoy count to log this set’s best run.</p>
+
+        <div class="chip-group">
+          <p class="chip-label" id="line-label">Line length</p>
+          <div class="chip-row" role="group" aria-labelledby="line-label" id="line-chips"></div>
+        </div>
+
+        <div class="chip-group">
+          <p class="chip-label" id="speed-label">Boat speed</p>
+          <div class="chip-row" role="group" aria-labelledby="speed-label" id="speed-chips"></div>
+        </div>
+
+        <div class="best-hero" id="slalom-best-hero">
+          <p class="best-kicker">Best</p>
+          <p class="best-number" id="slalom-best-number">—</p>
+          <p class="best-setup" id="slalom-best-setup"></p>
+        </div>
+
+        <div class="chip-group">
+          <p class="chip-label" id="buoy-label">Best run</p>
+          <div class="buoy-grid" role="group" aria-labelledby="buoy-label" id="buoy-chips"></div>
+        </div>
+
+        <div class="board-block" id="latest-session">
+          <h2 class="board-title" id="latest-session-heading">Latest session</h2>
+          <div class="board-table">
+            <div class="board-head session-head" id="session-head" hidden>
+              <span>Skier</span><span>Line</span><span>Speed</span><span>Buoys</span>
+            </div>
+            <ul class="board-list" id="session-list"></ul>
+          </div>
+          <p class="shelf-empty" id="session-empty">No session yet.</p>
+        </div>
+
+        <div class="board-block" id="club-board">
+          <h2 class="board-title">Club board</h2>
+          <p class="board-kicker">North Ridgeville Ski Lake</p>
+          <div class="board-table">
+            <div class="board-head club-head" id="club-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+            </div>
+            <ul class="board-list" id="club-list"></ul>
+          </div>
+          <p class="shelf-empty" id="club-empty">Log a set to open the board.</p>
+        </div>
+
+        <div class="board-block" id="best-board">
+          <h2 class="board-title">Best 10</h2>
+          <p class="board-kicker">Top performances</p>
+          <div class="board-table">
+            <div class="board-head club-head" id="best-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+            </div>
+            <ul class="board-list" id="best-list"></ul>
+          </div>
+          <p class="shelf-empty" id="best-empty">No performances yet.</p>
+        </div>
+
+        <div class="history-block">
+          <h2 class="chip-label">This skier’s sets</h2>
+          <div class="sets-table">
+            <div class="sets-head" id="sets-head" hidden>
+              <span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+            </div>
+            <ul class="set-history" id="set-history"></ul>
+          </div>
+          <p class="shelf-empty" id="history-empty">No sets yet.</p>
+        </div>
+      </section>
+    </main>
+
+    <section class="trophy-shelf" aria-label="Personal trophies">
+      <div class="shelf-head">
+        <h2>Trophies</h2>
+        <p class="shelf-note">Rare kneeboard awards.</p>
+      </div>
+      <ul class="shelf-list" id="trophy-shelf"></ul>
+      <p class="shelf-empty" id="trophy-empty">Empty shelf — land a first trick, a hard trick, a heli, five of one hard, or attach a clip.</p>
+    </section>
+
+    <footer>
+      <p>lake.world · North Ridgeville Ski Lake · this device only</p>
+    </footer>
+  </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>lake.world</title>
+  <script src="js/ga.js"></script>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #000;
+      color: #fff;
+      overflow: hidden;
+    }
+    #splash {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .poster-stage {
+      position: absolute;
+      inset: -18%;
+      perspective: 900px;
+      pointer-events: none;
+    }
+    .poster-wall {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transform: rotateX(20deg) rotateZ(-8deg) scale(1.28);
+      transform-origin: center center;
+    }
+    .poster-row {
+      display: flex;
+      gap: 16px;
+      width: max-content;
+      animation: drift 84s linear infinite;
+      will-change: transform;
+    }
+    .poster-row:nth-child(even) {
+      animation-name: drift-rev;
+      animation-duration: 108s;
+    }
+    .poster-row:nth-child(3n) { animation-duration: 96s; }
+    .poster-row img {
+      width: 132px;
+      height: 132px;
+      object-fit: cover;
+      border-radius: 3px;
+      flex: 0 0 auto;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+    .poster-row img.tile-circle { border-radius: 50%; }
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    @keyframes drift-rev {
+      from { transform: translateX(-50%); }
+      to { transform: translateX(0); }
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, rgba(0,0,0,.18) 10%, rgba(0,0,0,.62) 52%, #000 78%),
+        linear-gradient(to bottom, rgba(0,0,0,.82) 0%, transparent 26%, transparent 70%, #000 100%);
+      pointer-events: none;
+    }
+    .splash-nav {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 28px;
+    }
+    .wordmark {
+      margin: 0;
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: lowercase;
+    }
+    .hero {
+      position: relative;
+      z-index: 3;
+      max-width: 640px;
+      margin: 10vh auto 0;
+      padding: 0 24px 48px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4.6vw, 3.1rem);
+      line-height: 1.15;
+      margin: 0 0 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .hero p {
+      margin: 0 0 28px;
+      color: #ddd;
+      font-size: 1.15rem;
+    }
+    .preview-link {
+      display: inline-block;
+      padding: 14px 28px;
+      min-height: 56px;
+      line-height: 28px;
+      color: #fff;
+      background: #FC5200;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .preview-link:hover { background: #ff6a26; }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <div class="poster-stage" aria-hidden="true">
+      <div class="poster-wall">
+        <div class="poster-row" id="row-a"></div>
+        <div class="poster-row" id="row-b"></div>
+        <div class="poster-row" id="row-c"></div>
+        <div class="poster-row" id="row-d"></div>
+      </div>
+    </div>
+    <div class="vignette"></div>
+    <header class="splash-nav">
+      <p class="wordmark">lake.world</p>
+    </header>
+    <section class="hero">
+      <h1>Log the lake.</h1>
+      <p>Slalom, tricks, club boards. No accounts on the web yet.</p>
+      <a class="preview-link" href="preview/index.html">Preview</a>
+    </section>
+  </div>
+  <script>
+    (function () {
+      var tiles = [
+        "img/slalom-wake.jpg",
+        "img/kneeboard.jpg",
+        "img/course.jpg",
+        "img/buoys.jpg",
+        "img/boat.jpg",
+        "img/spray.jpg"
+      ];
+      var circles = { "img/buoys.jpg": true };
+      function rowHtml(offset) {
+        var html = "";
+        var i;
+        for (i = 0; i < tiles.length * 2; i++) {
+          var src = tiles[(i + offset) % tiles.length];
+          html += '<img src="' + src + '" alt=""' + (circles[src] ? ' class="tile-circle"' : "") + ">";
+        }
+        return html;
+      }
+      document.getElementById("row-a").innerHTML = rowHtml(0);
+      document.getElementById("row-b").innerHTML = rowHtml(2);
+      document.getElementById("row-c").innerHTML = rowHtml(4);
+      document.getElementById("row-d").innerHTML = rowHtml(1);
+    })();
+  </script>
+</body>
+</html>
