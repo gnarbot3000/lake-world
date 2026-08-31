@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "nrs-ski-lake-tricks-v2";
+  var STORAGE_KEY = "nrs-ski-lake-tricks-v2" + (window.LAKE_USER_ID ? "-" + window.LAKE_USER_ID : "");
   var CLUB = "North Ridgeville Ski Lake";
   var IDB_NAME = "nrs-ski-lake-tricks-v2";
   var IDB_STORE = "media";
@@ -906,6 +906,17 @@
   }
 
   var state = load();
+  (function prefillFromEmail() {
+    var email = window.LAKE_USER_EMAIL;
+    if (!email || typeof email !== "string") return;
+    var person = currentPerson();
+    if (!person) return;
+    if (String(person.name || "").trim()) return;
+    var local = (email.split("@")[0] || "").trim();
+    if (!local) return;
+    person.name = local;
+    save(state);
+  })();
   ensureSeedSkiers();
 
   /* ---- IndexedDB media (file:// safe: no modules, no server fetch) ---- */

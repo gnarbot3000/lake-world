@@ -1,9 +1,9 @@
 # lake.world
 
-Splash page only. Brand is **lake.world** (not “Lake World”). No web logins. Do not push live until Joel says so.
+Brand is **lake.world** (not “Lake World”). Email/password on the splash (lake.world Supabase project, not TurnKay). Preview still works as a guest demo.
 
-- `index.html` — public splash (hibala-style drifting watersports wall + Preview).
-- `preview/` — the Mini slalom/kneeboard log we’re developing on the Mac Mini.
+- `index.html` — public splash (hibala-style drifting watersports wall + Sign In + Preview).
+- `preview/` — slalom/kneeboard log. Guest is this-device localStorage; a signed-in session namespaces the save.
 - Domain sits at Squarespace. Registrar stays Squarespace. Separate from hibala.com.
 
-Open `index.html` (double-click). Preview opens the Mini in this folder.
+Open `index.html`. Preview is `preview/index.html`.

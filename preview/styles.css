@@ -101,6 +101,37 @@ body {
 
 #person-name::placeholder { color: var(--mute); }
 
+.mast-auth {
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+.mast-auth[hidden] { display: none; }
+#mast-user-email {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mute);
+  flex: 1;
+}
+#signout-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 0.85rem;
+  cursor: pointer;
+}
+#signout-btn:hover { background: #ff6a26; }
+
 .mast-tools { flex-wrap: wrap; }
 
 .units-seg {

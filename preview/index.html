@@ -25,6 +25,10 @@
         <label class="sr-only" for="person-name">Skier name</label>
         <input id="person-name" type="text" maxlength="60" placeholder="Skier name" autocomplete="nickname">
       </div>
+      <div class="mast-row mast-auth" id="mast-auth" hidden>
+        <span id="mast-user-email"></span>
+        <button type="button" id="signout-btn">Sign Out</button>
+      </div>
       <div class="mast-row mast-tools">
         <div class="units-seg" role="group" aria-label="Speed units">
           <button type="button" id="units-mph" data-act="units" data-units="mph" aria-pressed="true">mph</button>
@@ -163,6 +167,8 @@
   </div>
 
   <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/auth-preview.js"></script>
 </body>
 </html>

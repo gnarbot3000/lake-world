@@ -1,0 +1,2 @@
+window.LAKE_SUPABASE_URL = "https://zejficslgaqryxrndfqi.supabase.co";
+window.LAKE_SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplamZpY3NsZ2Fxcnl4cm5kZnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMDExMjYsImV4cCI6MjEwMzc3NzEyNn0.dt71WT9s2G3ZPCqKtnxJsU1ZRuzbxQt0ame_a2zKTX8";

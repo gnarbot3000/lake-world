@@ -1,8 +1,8 @@
 # lake.world
 
-Product brand: **lake.world** (not “Lake World”). Category: watersports. Local-first logbook for **slalom skiing** (main, best run of a set) and **kneeboarding** (secondary tricks). No accounts, no server, no judges. Self-report only.
+Product brand: **lake.world** (not “Lake World”). Category: watersports. Local-first logbook for **slalom skiing** (main, best run of a set) and **kneeboarding** (secondary tricks). Self-report only. Splash Sign In is optional; Preview still works as a guest.
 
-Club is hardcoded: **North Ridgeville Ski Lake**. This browser is the club logbook for now — a local roster of skiers, no logins, no passwords, no other clubs. Real accounts are not here yet; everything stays on this device.
+Club is hardcoded: **North Ridgeville Ski Lake**. This browser is the club logbook for now — a local roster of skiers, no other clubs. Guest saves stay on this device. A signed-in lake.world account namespaces the same local save.
 
 Look: light outdoor dock log for noon on the water — UDisc/Hevy-inspired, high-contrast. Not a dark night-lake theme.
 
@@ -103,7 +103,7 @@ Each trophy stores `id`, `title`, and earned date.
 
 ## What is stored
 
-- Club roster lives in this browser’s `localStorage` (`nrs-ski-lake-tricks-v2`): `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `seed` for demo skiers), `currentPersonId`, club-wide `units` (`mph` | `kph`), and `club`. Older `ticks` keys are ignored. This device only until real accounts exist.
+- Club roster lives in this browser’s `localStorage` (`nrs-ski-lake-tricks-v2`): `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `seed` for demo skiers), `currentPersonId`, club-wide `units` (`mph` | `kph`), and `club`. Older `ticks` keys are ignored. Guest key is `nrs-ski-lake-tricks-v2`; signed-in key appends `-<user id>`.
 - Photos and videos live in IndexedDB (`nrs-ski-lake-tricks-v2`), keyed per skier. They never leave this browser.
 - Clearing site data for the file will wipe the roster, logbook, score, trophies, slalom sets, and media.
 

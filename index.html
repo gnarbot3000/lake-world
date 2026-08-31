@@ -7,6 +7,8 @@
   <meta name="theme-color" content="#000000">
   <title>lake.world</title>
   <script src="js/ga.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -15,7 +17,13 @@
       font-family: ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
       background: #000;
       color: #fff;
-      overflow: hidden;
+      overflow-x: hidden;
+    }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      color: #fff;
+      border: none;
     }
     #splash {
       position: relative;
@@ -87,11 +95,20 @@
       letter-spacing: .12em;
       text-transform: lowercase;
     }
+    .nav-signin {
+      width: auto;
+      padding: 8px 18px;
+      background: #FC5200;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .nav-signin:hover { background: #ff6a26; }
     .hero {
       position: relative;
       z-index: 3;
       max-width: 640px;
-      margin: 10vh auto 0;
+      margin: 8vh auto 0;
       padding: 0 24px 48px;
       text-align: center;
     }
@@ -107,21 +124,93 @@
       color: #ddd;
       font-size: 1.15rem;
     }
-    .preview-link {
-      display: inline-block;
-      padding: 14px 28px;
-      min-height: 56px;
-      line-height: 28px;
+    #login-form { max-width: 520px; margin: 0 auto; }
+    .auth-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #login-form input {
+      flex: 1 1 220px;
+      flex-grow: 0;
+      height: 48px;
+      max-height: 48px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 16px;
+      line-height: 1.2;
+      box-sizing: border-box;
       color: #fff;
-      background: #FC5200;
+      background: rgba(20,20,20,.72);
+      border: 1px solid rgba(255,255,255,.28);
       border-radius: 8px;
-      text-decoration: none;
+      backdrop-filter: blur(8px);
+    }
+    #signin-btn {
+      width: auto;
+      flex: 0 0 auto;
+      padding: 12px 22px;
+      height: 48px;
+      background: #FC5200;
+      border-radius: 4px;
       font-weight: 700;
       font-size: 1rem;
+      margin-bottom: 8px;
     }
-    .preview-link:hover { background: #ff6a26; }
+    #signin-btn:hover { background: #ff6a26; }
+    #signup-btn {
+      width: auto;
+      margin-top: 4px;
+      padding: 10px 18px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    #signup-btn:hover { background: rgba(20,20,20,.45); }
+    .preview-link {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 18px;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: rgba(0,0,0,.28);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .preview-link:hover { background: rgba(20,20,20,.45); }
+    #auth-error {
+      color: #ff6b6b;
+      margin-top: 12px;
+      display: none;
+    }
+    @media (max-width: 640px) {
+      .poster-row img { width: 96px; height: 96px; }
+      .splash-nav { padding: 16px; }
+      .auth-row { flex-direction: column; align-items: stretch; }
+      #login-form input {
+        flex: 0 0 auto;
+        width: 100%;
+        height: 44px;
+        max-height: 44px;
+      }
+      #signin-btn, #signup-btn { width: 100%; height: 44px; padding: 10px 16px; }
+      .preview-link { display: block; width: 100%; box-sizing: border-box; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .poster-row { animation: none; }
+    }
   </style>
 </head>
+
 <body>
   <div id="splash">
     <div class="poster-stage" aria-hidden="true">
@@ -135,38 +224,24 @@
     <div class="vignette"></div>
     <header class="splash-nav">
       <p class="wordmark">lake.world</p>
+      <button type="button" class="nav-signin" id="nav-signin">Sign In</button>
     </header>
-    <section class="hero">
+    <section class="hero" id="auth-section">
       <h1>Log the lake.</h1>
-      <p>Slalom, tricks, club boards. No accounts on the web yet.</p>
-      <a class="preview-link" href="preview/index.html">Preview</a>
+      <p>Slalom, tricks, club boards.</p>
+      <form id="login-form">
+        <div class="auth-row">
+          <input type="email" id="email" name="email" placeholder="Email" required autocomplete="username">
+          <input type="password" id="password" name="password" placeholder="Password" required minlength="6" autocomplete="current-password">
+          <button type="submit" id="signin-btn">Sign In</button>
+        </div>
+        <button type="button" id="signup-btn">Create account</button>
+        <a class="preview-link" href="preview/index.html">Preview</a>
+      </form>
+      <div id="auth-error"></div>
     </section>
   </div>
-  <script>
-    (function () {
-      var tiles = [
-        "img/slalom-wake.jpg",
-        "img/kneeboard.jpg",
-        "img/course.jpg",
-        "img/buoys.jpg",
-        "img/boat.jpg",
-        "img/spray.jpg"
-      ];
-      var circles = { "img/buoys.jpg": true };
-      function rowHtml(offset) {
-        var html = "";
-        var i;
-        for (i = 0; i < tiles.length * 2; i++) {
-          var src = tiles[(i + offset) % tiles.length];
-          html += '<img src="' + src + '" alt=""' + (circles[src] ? ' class="tile-circle"' : "") + ">";
-        }
-        return html;
-      }
-      document.getElementById("row-a").innerHTML = rowHtml(0);
-      document.getElementById("row-b").innerHTML = rowHtml(2);
-      document.getElementById("row-c").innerHTML = rowHtml(4);
-      document.getElementById("row-d").innerHTML = rowHtml(1);
-    })();
-  </script>
+  <script src="js/splash-wall.js"></script>
+  <script src="js/auth-splash.js"></script>
 </body>
 </html>
