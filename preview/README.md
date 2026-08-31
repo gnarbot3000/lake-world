@@ -2,7 +2,7 @@
 
 Product brand: **lake.world** (not “Lake World”). Category: watersports. Local-first logbook for **slalom skiing** (main, best run of a set) and **kneeboarding** (secondary tricks). Self-report only. Splash Sign In is optional; Preview still works as a guest.
 
-Club is hardcoded: **Ski Paradise Ohio**. This browser is the club logbook for now — a local roster of skiers, no other clubs. Guest saves stay on this device. A signed-in lake.world account namespaces the same local save.
+Club is hardcoded: **Ski Paradise Cleveland** (first / only club). This browser is the club logbook for now — a members-only roster, no other clubs. Guest Preview is personal-only. A signed-in lake.world account namespaces the same local save and unlocks the club.
 
 Look: light outdoor dock log for noon on the water — UDisc/Hevy-inspired, high-contrast. Not a dark night-lake theme.
 
@@ -34,23 +34,29 @@ The Mini opens on **Slalom**. Kneeboard is the second tab. Switching skiers swit
 
 ## Club roster
 
-Skier chips on the Slalom tab are who is logging. Tap a name to switch. **Add skier** takes a name (orange bar); blank names and duplicate names (case-insensitive, trimmed) are refused. The header name field edits the *current* skier. Logging a set with no name toasts **Add a name to hit the board** and focuses that field — you cannot hit the board unnamed.
+Who is skiing is a **dropdown** in the header (slalom and kneeboard), not chips — 30 names is too many for chips. Pick a name to switch `currentPersonId`; logs go to that person. Names sort last, then first. If the signed-in email matches a club member (Joel Hageman for `joel.hageman@gmail.com`), that member is auto-selected. Logging a set with no name toasts **Add a name to hit the board**.
 
-On first load, the **34 real Ski Paradise Ohio members** are added once and tagged `seed: true` so a reload does not duplicate them. They have **no invented slalom scores, kneeboard tricks, or trophies** — empty logs until someone actually records a set. The current skier (usually `p1`) and any non-seed people you added are kept. If a non-seed person already has the same display name (for example Joel already named himself Joel Hageman), that seed name is skipped (`nameTaken`). Unique ids look like `seed-don-lydon`.
+**Add junior member** takes a name only (no email). It creates a person `{ junior: true, parentId: signed-in user or current adult, seed: false }` with empty slalom/kneeboard. Juniors show in this member’s dropdown as `Owen Hageman (junior)` and their sets appear on the club board / latest session / Best 10 like anyone else. Do not pre-seed juniors; the feature is the add flow. Blank names and duplicate names (case-insensitive, trimmed) are refused. The old unrestricted **Add skier** is gone so guests cannot invent club members on the hosted site. `file://` may still add juniors locally.
 
-Existing browsers that still have the old ten fake demo skiers (Mike Raines, Sarah Polk, Dave Keene, Amy Voss, Chris Hallow, Jen Marchetti, Ryan Stoltz, Lisa Nguyen, Tom Bridger, Nate Crowley) migrate automatically: `SEED_GEN` is `ski-paradise-ohio-1`, persisted as `state.seedGen`. When stored `seedGen` does not match, all `people` with `seed === true` are removed, the 34 club members are inserted, and the new gen is saved. Those old demo names are gone after that migration.
+On first signed-in or `file://` load, the **30 real Ski Paradise Cleveland members** are added once and tagged `seed: true` so a reload does not duplicate them. They have **no invented slalom scores, kneeboard tricks, or trophies** — empty logs until someone actually records a set. Emails are stored on the person for auto-match and are not shown in the UI. The current skier (usually `p1`) and any non-seed people / juniors you added are kept. If a non-seed person already has the same display name (for example Joel already named himself Joel Hageman), that seed name is skipped (`nameTaken`). Unique ids look like `seed-don-lydon`.
+
+Roster lives in `preview/club-roster.js`. Hosted http(s) loads that file only when `window.LAKE_USER_ID` is set (signed in). Guests on github.io / lake.world never request it. `file://` (Desktop Mini) always loads it so Joel can test without login. Names will still exist as a static GitHub Pages file if someone guesses the URL; that is acceptable for this Mini.
+
+Existing browsers that still have the old demo skiers or the previous club roster (including RM Voiers, Jackie Matus, and the Zangmeisters) migrate automatically: `SEED_GEN` is `ski-paradise-cleveland-1`, persisted as `state.seedGen`. When stored `seedGen` does not match, all `people` with `seed === true` are stripped, the 30 club members are inserted, and the new gen is saved.
+
+**Privacy (hosted):** other members’ names, club board, latest session (other skiers), and Best 10 are members-only. A guest on https sees a personal Mini only — themselves, no club names, those blocks empty/hidden, and a note **Sign in to see Ski Paradise Cleveland.** The splash Preview link stays; it is personal-only.
 
 ## Latest session vs club board
 
 Two slalom boards, different windows:
 
 - **Latest session** — the most recent date that appears on anyone’s `slalomSets` (not necessarily today). Heading like `Latest session · Aug 31`. One row per skier who logged that date, showing **their best run that day** (same tie-break). Columns: Skier · Line · Speed · **Buoys**. Current skier’s row is lime. Empty: `No session yet.` Rows sort hardest pass first.
-- **Club board** — Ski Paradise Ohio, all-time. One row per skier who has at least one set, ranked by **career best** (more buoys, then shorter line / higher off, then faster mph). Columns: Rank · Skier · **Date** · Line · Speed · **Buoys**. The date is the day of that career-best run. Rank 1 is emphasized; current skier is highlighted. Empty: `Log a set to open the board.`
+- **Club board** — Ski Paradise Cleveland, all-time. One row per skier who has at least one set, ranked by **career best** (more buoys, then shorter line / higher off, then faster mph). Columns: Rank · Skier · **Date** · Line · Speed · **Buoys**. The date is the day of that career-best run. Rank 1 is emphasized; current skier is highlighted. Empty: `Log a set to open the board.`
 - **Best 10** — top 10 individual sets across the whole club (not one-row-per-skier; the same skier can appear more than once). Same sort as career best. Columns: Rank · Skier · Date · Line · Speed · Buoys. Current skier’s rows are lime. Empty: `No performances yet.`
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there — no extra hunt.
 
-Slalom tab order: roster → line / speed / best-run chips + personal best → latest session → club board → best 10 → this skier’s sets.
+Slalom tab order: junior add → line / speed / best-run chips + personal best → latest session → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
 
 ## Slalom — best of the set
 
@@ -60,7 +66,7 @@ Pick **line length** and **boat speed**, then tap the buoy count (**1 through 6 
 
 There is no working-range window, no bump-up after a 6, and **no ZBS**.
 
-**Units** (`mph` | `kph`) live in the sticky header and are **club-wide**, not per skier. Default is **mph** (Ohio club). Internally every set is stored canonical `{ off, mph }`. Labels follow IWWF pairing:
+**Units** (`mph` | `kph`) live in the sticky header and are **club-wide**, not per skier. Default is **mph** (Cleveland club). Internally every set is stored canonical `{ off, mph }`. Labels follow IWWF pairing:
 
 | Off (stored) | Imperial | Metric |
 | --- | --- | --- |
@@ -105,7 +111,7 @@ Each trophy stores `id`, `title`, and earned date.
 
 ## What is stored
 
-- Club roster lives in this browser’s `localStorage` (`nrs-ski-lake-tricks-v2`): `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `seed` for club members), `currentPersonId`, club-wide `units` (`mph` | `kph`), `club`, and `seedGen` (currently `ski-paradise-ohio-1`). Older `ticks` keys are ignored. Guest key is `nrs-ski-lake-tricks-v2`; signed-in key appends `-<user id>`.
+- Club roster lives in this browser’s `localStorage` (`nrs-ski-lake-tricks-v2`): `people[]` (`id`, `name`, `selectedPass`, `slalomSets`, `sports`, `score`, `trophies`, `hasMedia`, optional `seed` for club members, optional `email` for auto-match, optional `junior` / `parentId`), `currentPersonId`, club-wide `units` (`mph` | `kph`), `club`, and `seedGen` (currently `ski-paradise-cleveland-1`). Older `ticks` keys are ignored. Guest key is `nrs-ski-lake-tricks-v2`; signed-in key appends `-<user id>`.
 - Photos and videos live in IndexedDB (`nrs-ski-lake-tricks-v2`), keyed per skier. They never leave this browser.
 - Clearing site data for the file will wipe the roster, logbook, score, trophies, slalom sets, and media.
 

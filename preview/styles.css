@@ -86,7 +86,8 @@ body {
   line-height: 1;
 }
 
-#person-name {
+#person-name,
+#person-select {
   flex: 1;
   min-width: 0;
   font: inherit;
@@ -99,7 +100,14 @@ body {
   min-height: var(--tap);
 }
 
+#person-select {
+  cursor: pointer;
+  appearance: auto;
+}
+
 #person-name::placeholder { color: var(--mute); }
+#person-name[hidden],
+#person-select[hidden] { display: none; }
 
 .mast-auth {
   justify-content: flex-end;
@@ -949,6 +957,15 @@ input:focus-visible {
 }
 
 .roster-block .chip-label { margin-bottom: 0.45rem; }
+
+.club-signin-note {
+  margin: 0.65rem 1rem 0;
+  color: var(--mute);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.club-signin-note[hidden],
+#junior-block[hidden] { display: none; }
 
 .chip.is-skier.is-on {
   background: var(--landed);

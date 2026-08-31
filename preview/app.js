@@ -2,7 +2,7 @@
   "use strict";
 
   var STORAGE_KEY = "nrs-ski-lake-tricks-v2" + (window.LAKE_USER_ID ? "-" + window.LAKE_USER_ID : "");
-  var CLUB = "Ski Paradise Ohio";
+  var CLUB = "Ski Paradise Cleveland";
   var IDB_NAME = "nrs-ski-lake-tricks-v2";
   var IDB_STORE = "media";
 
@@ -39,45 +39,20 @@
   var BUOY_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6];
   var DEFAULT_PASS = { off: 15, mph: 28 };
 
-  var SEED_GEN = "ski-paradise-ohio-1";
+  var SEED_GEN = "ski-paradise-cleveland-1";
 
-  /* Ski Paradise Ohio roster — real members, empty logs. Tagged seed:true so a reload does not duplicate. */
-  var SEED_SKIERS = [
-    { id: "seed-greg-alber", name: "Greg Alber", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-judy-beckenbach", name: "Judy Beckenbach", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-shannon-cochrane", name: "Shannon Cochrane", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-tim-cochrane", name: "Tim Cochrane", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-nancy-dadas", name: "Nancy Dadas", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-nick-dadas", name: "Nick Dadas", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-teri-fetherolf", name: "Teri Fetherolf", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-jackie-frilling", name: "Jackie Frilling", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-travis-frilling", name: "Travis Frilling", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-julie-gray", name: "Julie Gray", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-troy-gray", name: "Troy Gray", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-joe-guinter", name: "Joe Guinter", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-michelle-guinter", name: "Michelle Guinter", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-agata-hageman", name: "Agata Hageman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-joel-hageman", name: "Joel Hageman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-jeff-hastings", name: "Jeff Hastings", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-jenny-hohman", name: "Jenny Hohman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-lewie-hohman", name: "Lewie Hohman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-deborah-logan", name: "Deborah Logan", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-justin-logan", name: "Justin Logan", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-michelle-loufman", name: "Michelle Loufman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-mike-loufman", name: "Mike Loufman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-don-lydon", name: "Don Lydon", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-jackie-matus", name: "Jackie Matus", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-mike-nichols", name: "Mike Nichols", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-doug-poe", name: "Doug Poe", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-joel-rathbun", name: "Joel Rathbun", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-mary-ellen-voiers", name: "Mary Ellen Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-rick-voiers", name: "Rick Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-rm-voiers", name: "RM Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-brad-way", name: "Brad Way", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-laura-way", name: "Laura Way", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-laura-zangmeister", name: "Laura Zangmeister", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
-    { id: "seed-steve-zangmeister", name: "Steve Zangmeister", selectedPass: { off: 15, mph: 28 }, slalomSets: [] }
-  ];
+  function clubRoster() {
+    var list = window.LAKE_CLUB_ROSTER;
+    return Array.isArray(list) ? list : [];
+  }
+
+  function clubVisible() {
+    try {
+      if (location.protocol === "file:") return true;
+    } catch (err) {}
+    return !!(window.LAKE_USER_ID);
+  }
+
 
   var TROPHY_DEFS = [
     { id: "first-trick", title: "First trick" },
@@ -131,6 +106,7 @@
     p.slalomSets = normalizeSets(spec.slalomSets);
     p.score = 0;
     p.trophies = [];
+    if (typeof spec.email === "string" && spec.email) p.email = spec.email;
     return p;
   }
 
@@ -171,17 +147,40 @@
     } else if (hasSeedPeople(state.people)) {
       return;
     }
-    for (i = 0; i < SEED_SKIERS.length; i++) {
-      var spec = SEED_SKIERS[i];
+    if (!clubVisible()) {
+      if (changed) save(state);
+      return;
+    }
+    var seeds = clubRoster();
+    for (i = 0; i < seeds.length; i++) {
+      var spec = seeds[i];
       var exists = false;
       for (j = 0; j < state.people.length; j++) {
         if (state.people[j].id === spec.id) {
           exists = true;
+          if (spec.email && !state.people[j].email) {
+            state.people[j].email = spec.email;
+            changed = true;
+          }
           break;
         }
       }
       if (exists) continue;
-      if (nameTaken(spec.name)) continue;
+      if (nameTaken(spec.name)) {
+        if (spec.email) {
+          var want = String(spec.name || "").replace(/\s+/g, " ").trim().toLowerCase();
+          for (j = 0; j < state.people.length; j++) {
+            if (personNameOf(state.people[j]).toLowerCase() === want) {
+              if (!state.people[j].email) {
+                state.people[j].email = spec.email;
+                changed = true;
+              }
+              break;
+            }
+          }
+        }
+        continue;
+      }
       state.people.push(makeSeedPerson(spec));
       changed = true;
     }
@@ -235,6 +234,9 @@
     if (src.hasMedia === true) p.hasMedia = true;
     if (typeof src.score === "number") p.score = src.score;
     if (src.seed === true) p.seed = true;
+    if (src.junior === true) p.junior = true;
+    if (typeof src.parentId === "string" && src.parentId) p.parentId = src.parentId;
+    if (typeof src.email === "string" && src.email) p.email = src.email;
     return p;
   }
 
@@ -351,6 +353,68 @@
       if (personNameOf(people[i]).toLowerCase() === n) return true;
     }
     return false;
+  }
+
+  function nameSortKey(name) {
+    var parts = String(name || "").replace(/\s+/g, " ").trim().split(" ");
+    if (!parts[0]) return { last: "", first: "" };
+    if (parts.length === 1) return { last: parts[0].toLowerCase(), first: "" };
+    return {
+      last: parts[parts.length - 1].toLowerCase(),
+      first: parts.slice(0, -1).join(" ").toLowerCase()
+    };
+  }
+
+  function comparePeopleByName(a, b) {
+    var ka = nameSortKey(personNameOf(a));
+    var kb = nameSortKey(personNameOf(b));
+    if (ka.last < kb.last) return -1;
+    if (ka.last > kb.last) return 1;
+    if (ka.first < kb.first) return -1;
+    if (ka.first > kb.first) return 1;
+    return 0;
+  }
+
+  function optionLabel(person) {
+    var n = displayName(person);
+    if (person && person.junior === true) return n + " (junior)";
+    return n;
+  }
+
+  function currentAdultId() {
+    if (window.LAKE_USER_ID) return window.LAKE_USER_ID;
+    var cur = currentPerson();
+    if (!cur) return "";
+    if (cur.junior === true && cur.parentId) return cur.parentId;
+    return cur.id;
+  }
+
+  function peopleForDropdown() {
+    var people = state.people || [];
+    var out = [];
+    var seen = {};
+    var i;
+    var cur = currentPerson();
+    if (!clubVisible()) {
+      if (cur) out.push(cur);
+      return out;
+    }
+    var adultId = currentAdultId();
+    var userId = window.LAKE_USER_ID || "";
+    for (i = 0; i < people.length; i++) {
+      var p = people[i];
+      if (!p || !p.id || seen[p.id]) continue;
+      var keep = false;
+      if (p.seed === true) keep = true;
+      else if (p.junior === true) {
+        if (p.parentId && (p.parentId === adultId || (userId && p.parentId === userId))) keep = true;
+      } else if (cur && p.id === cur.id) keep = true;
+      if (!keep) continue;
+      seen[p.id] = true;
+      out.push(p);
+    }
+    out.sort(comparePeopleByName);
+    return out;
   }
 
   function escapeHtml(s) {
@@ -884,19 +948,32 @@
     renderAll();
   }
 
-  var state = load();
-  (function prefillFromEmail() {
-    var email = window.LAKE_USER_EMAIL;
-    if (!email || typeof email !== "string") return;
-    var person = currentPerson();
-    if (!person) return;
-    if (String(person.name || "").trim()) return;
-    var local = (email.split("@")[0] || "").trim();
-    if (!local) return;
-    person.name = local;
+  function autoSelectMemberByEmail() {
+    var email = String(window.LAKE_USER_EMAIL || "").trim().toLowerCase();
+    if (!email) return;
+    var people = state.people || [];
+    var match = null;
+    var i;
+    for (i = 0; i < people.length; i++) {
+      if (String(people[i].email || "").trim().toLowerCase() === email) {
+        match = people[i];
+        break;
+      }
+    }
+    if (!match) return;
+    var cur = currentPerson();
+    if (cur && cur.id === match.id) return;
+    if (cur && cur.junior === true) {
+      var parent = window.LAKE_USER_ID || match.id;
+      if (cur.parentId === parent || cur.parentId === match.id) return;
+    }
+    state.currentPersonId = match.id;
     save(state);
-  })();
+  }
+
+  var state = load();
   ensureSeedSkiers();
+  autoSelectMemberByEmail();
 
   /* ---- IndexedDB media (file:// safe: no modules, no server fetch) ---- */
 
@@ -1254,22 +1331,57 @@
     renderBoards();
   }
 
-  function renderRoster() {
-    var row = document.getElementById("skier-chips");
-    if (!row) return;
-    var people = state.people || [];
-    var curId = currentPerson().id;
-    var html = "";
-    var i;
-    for (i = 0; i < people.length; i++) {
-      var p = people[i];
-      var on = p.id === curId;
-      html += '<button type="button" class="chip is-skier' + (on ? " is-on" : "") +
-        '" data-act="select-skier" data-id="' + escapeHtml(p.id) +
-        '" aria-pressed="' + (on ? "true" : "false") + '">' +
-        escapeHtml(displayName(p)) + "</button>";
+  function paintClubChrome() {
+    var vis = clubVisible();
+    var note = document.getElementById("club-signin-note");
+    var session = document.getElementById("latest-session");
+    var club = document.getElementById("club-board");
+    var best = document.getElementById("best-board");
+    var junior = document.getElementById("junior-block");
+    var footer = document.querySelector("footer p");
+    var kicker = document.querySelector("#club-board .board-kicker");
+    if (note) note.hidden = vis;
+    if (session) session.hidden = !vis;
+    if (club) club.hidden = !vis;
+    if (best) best.hidden = !vis;
+    if (junior) junior.hidden = !vis;
+    if (kicker) kicker.textContent = CLUB;
+    if (footer) {
+      footer.textContent = vis
+        ? "lake.world · " + CLUB + " · this device only"
+        : "lake.world · this device only";
     }
-    row.innerHTML = html;
+  }
+
+  function renderRoster() {
+    var sel = document.getElementById("person-select");
+    var field = document.getElementById("person-name");
+    var vis = clubVisible();
+    if (sel) sel.hidden = !vis;
+    if (field) field.hidden = vis;
+    if (vis && sel) {
+      var people = peopleForDropdown();
+      var cur = currentPerson();
+      var curId = cur.id;
+      var html = "";
+      var i;
+      var found = false;
+      for (i = 0; i < people.length; i++) {
+        var p = people[i];
+        var on = p.id === curId;
+        if (on) found = true;
+        html += '<option value="' + escapeHtml(p.id) + '"' + (on ? " selected" : "") + ">" +
+          escapeHtml(optionLabel(p)) + "</option>";
+      }
+      if (!found && cur) {
+        html = '<option value="' + escapeHtml(curId) + '" selected>' +
+          escapeHtml(optionLabel(cur)) + "</option>" + html;
+      }
+      sel.innerHTML = html;
+    } else if (field && document.activeElement !== field) {
+      var guest = currentPerson();
+      field.value = (guest && guest.name) || "";
+    }
   }
 
   function renderSession() {
@@ -1278,6 +1390,12 @@
     var head = document.getElementById("session-head");
     var heading = document.getElementById("latest-session-heading");
     if (!list) return;
+    if (!clubVisible()) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = true;
+      if (head) head.hidden = true;
+      return;
+    }
     var date = latestSessionDate();
     if (heading) {
       heading.textContent = date ? ("Latest session · " + prettyDateShort(date)) : "Latest session";
@@ -1328,6 +1446,12 @@
     var empty = document.getElementById("club-empty");
     var head = document.getElementById("club-head");
     if (!list) return;
+    if (!clubVisible()) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = true;
+      if (head) head.hidden = true;
+      return;
+    }
     var people = state.people || [];
     var rows = [];
     var i;
@@ -1371,6 +1495,12 @@
     var empty = document.getElementById("best-empty");
     var head = document.getElementById("best-head");
     if (!list) return;
+    if (!clubVisible()) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = true;
+      if (head) head.hidden = true;
+      return;
+    }
     var rows = allSets();
     rows.sort(compareSetsDesc);
     if (rows.length > 10) rows = rows.slice(0, 10);
@@ -1403,6 +1533,7 @@
   }
 
   function renderBoards() {
+    paintClubChrome();
     renderSession();
     renderClubBoard();
     renderBest10();
@@ -1501,7 +1632,8 @@
     }
   }
 
-  function addSkier(raw) {
+  function addJunior(raw) {
+    if (!clubVisible()) return false;
     var name = String(raw || "").replace(/\s+/g, " ").trim();
     if (!name) return false;
     if (nameTaken(name)) {
@@ -1509,6 +1641,10 @@
       return false;
     }
     var p = emptyPerson(newPersonId(), name);
+    p.junior = true;
+    p.seed = false;
+    p.parentId = window.LAKE_USER_ID || currentAdultId();
+    p.slalomSets = [];
     state.people.push(p);
     state.currentPersonId = p.id;
     save(state);
@@ -1528,39 +1664,52 @@
     switchSport(tab.getAttribute("data-sport"));
   });
 
-  document.getElementById("person-name").addEventListener("input", function (e) {
-    var p = currentPerson();
-    var val = e.target.value;
-    var trimmed = String(val || "").replace(/\s+/g, " ").trim();
-    if (trimmed && nameTaken(trimmed, p.id)) return;
-    p.name = val;
-    save(state);
-    renderRoster();
-    renderBoards();
-  });
+  var personNameField = document.getElementById("person-name");
+  if (personNameField) {
+    personNameField.addEventListener("input", function (e) {
+      var p = currentPerson();
+      var val = e.target.value;
+      var trimmed = String(val || "").replace(/\s+/g, " ").trim();
+      if (trimmed && nameTaken(trimmed, p.id)) return;
+      p.name = val;
+      save(state);
+      renderRoster();
+      renderBoards();
+    });
 
-  document.getElementById("person-name").addEventListener("blur", function (e) {
-    var p = currentPerson();
-    var trimmed = String(e.target.value || "").replace(/\s+/g, " ").trim();
-    if (trimmed && nameTaken(trimmed, p.id)) {
-      e.target.value = p.name || "";
-      showToast("log", "That skier is already on the roster");
-      return;
-    }
-    p.name = trimmed;
-    save(state);
-    e.target.value = p.name;
-    renderRoster();
-    renderBoards();
-  });
+    personNameField.addEventListener("blur", function (e) {
+      var p = currentPerson();
+      var trimmed = String(e.target.value || "").replace(/\s+/g, " ").trim();
+      if (trimmed && nameTaken(trimmed, p.id)) {
+        e.target.value = p.name || "";
+        showToast("log", "That skier is already on the roster");
+        return;
+      }
+      p.name = trimmed;
+      save(state);
+      e.target.value = p.name;
+      renderRoster();
+      renderBoards();
+    });
+  }
 
-  document.getElementById("add-skier-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var field = document.getElementById("add-skier-name");
-    var name = field ? field.value : "";
-    if (addSkier(name) && field) field.value = "";
-    if (field) field.focus();
-  });
+  var addJuniorForm = document.getElementById("add-junior-form");
+  if (addJuniorForm) {
+    addJuniorForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var field = document.getElementById("add-junior-name");
+      var name = field ? field.value : "";
+      if (addJunior(name) && field) field.value = "";
+      if (field) field.focus();
+    });
+  }
+
+  var personSelect = document.getElementById("person-select");
+  if (personSelect) {
+    personSelect.addEventListener("change", function (e) {
+      switchPerson(e.target.value);
+    });
+  }
 
   document.querySelector(".masthead").addEventListener("click", function (e) {
     var btn = e.target.closest("button");
@@ -1754,6 +1903,7 @@
     });
   }
 
+  paintClubChrome();
   paintNameField();
   switchSport("slalom");
   renderAll();

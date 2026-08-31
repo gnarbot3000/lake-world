@@ -8,11 +8,33 @@
     if (wrap) wrap.hidden = !email;
   }
 
-  function loadApp() {
+  function loadScript(src, done) {
     var s = document.createElement("script");
-    s.src = "app.js";
+    s.src = src;
     s.async = false;
+    if (done) {
+      s.onload = done;
+      s.onerror = done;
+    }
     document.body.appendChild(s);
+  }
+
+  function canLoadClubRoster() {
+    try {
+      if (location.protocol === "file:") return true;
+    } catch (err) {}
+    return !!(window.LAKE_USER_ID);
+  }
+
+  function loadApp() {
+    var start = function () {
+      loadScript("app.js");
+    };
+    if (canLoadClubRoster()) {
+      loadScript("club-roster.js", start);
+    } else {
+      start();
+    }
   }
 
   function bindSignOut(sb) {

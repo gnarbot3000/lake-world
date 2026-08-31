@@ -22,8 +22,10 @@
           </div>
           <p class="wordmark">lake.world</p>
         </div>
+        <label class="sr-only" for="person-select">Who is skiing</label>
+        <select id="person-select" aria-label="Who is skiing"></select>
         <label class="sr-only" for="person-name">Skier name</label>
-        <input id="person-name" type="text" maxlength="60" placeholder="Skier name" autocomplete="nickname">
+        <input id="person-name" type="text" maxlength="60" placeholder="Skier name" autocomplete="nickname" hidden>
       </div>
       <div class="mast-row mast-auth" id="mast-auth" hidden>
         <span id="mast-user-email"></span>
@@ -47,6 +49,8 @@
       <button type="button" class="tab" role="tab" id="tab-kneeboard" aria-selected="false" aria-controls="panel-kneeboard" data-sport="kneeboard">Kneeboard</button>
     </nav>
 
+    <p class="club-signin-note" id="club-signin-note" hidden>Sign in to see Ski Paradise Cleveland.</p>
+
     <main>
       <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
         <div class="progress-card" data-progress="kneeboard">
@@ -69,14 +73,12 @@
       </section>
 
       <section class="panel is-active" id="panel-slalom" role="tabpanel" aria-labelledby="tab-slalom" data-sport="slalom">
-        <div class="roster-block">
-          <p class="chip-label" id="skier-label">Who is skiing</p>
-          <div class="chip-row" role="group" aria-labelledby="skier-label" id="skier-chips"></div>
-          <form class="add-skier-form" id="add-skier-form" autocomplete="off">
-            <label class="sr-only" for="add-skier-name">Add skier</label>
+        <div class="roster-block" id="junior-block">
+          <form class="add-skier-form" id="add-junior-form" autocomplete="off">
+            <label class="chip-label" for="add-junior-name">Add junior member</label>
             <div class="add-row">
-              <input id="add-skier-name" type="text" maxlength="60" placeholder="Name" required>
-              <button type="submit" class="btn-primary">Add skier</button>
+              <input id="add-junior-name" type="text" maxlength="60" placeholder="Name" required>
+              <button type="submit" class="btn-primary">Add junior member</button>
             </div>
           </form>
         </div>
@@ -117,7 +119,7 @@
 
         <div class="board-block" id="club-board">
           <h2 class="board-title">Club board</h2>
-          <p class="board-kicker">Ski Paradise Ohio</p>
+          <p class="board-kicker">Ski Paradise Cleveland</p>
           <div class="board-table">
             <div class="board-head club-head" id="club-head" hidden>
               <span>Rank</span><span>Skier</span><span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
@@ -162,7 +164,7 @@
     </section>
 
     <footer>
-      <p>lake.world · Ski Paradise Ohio · this device only</p>
+      <p>lake.world · Ski Paradise Cleveland · this device only</p>
     </footer>
   </div>
 
