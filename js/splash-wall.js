@@ -8,17 +8,23 @@
     "img/spray.jpg"
   ];
   var circles = { "img/buoys.jpg": true };
-  function rowHtml(offset) {
-    var html = "";
-    var i;
-    for (i = 0; i < tiles.length * 2; i++) {
-      var src = tiles[(i + offset) % tiles.length];
-      html += "<img src=\"" + src + "\" alt=\"\"" + (circles[src] ? " class=\"tile-circle\"" : "") + ">";
+  var wall = document.querySelector(".poster-wall");
+  if (!wall) return;
+  wall.innerHTML = "";
+  var ROW_COUNT = 10;
+  var COPIES = 4;
+  var r, i, row, src, img;
+  for (r = 0; r < ROW_COUNT; r++) {
+    row = document.createElement("div");
+    row.className = "poster-row";
+    for (i = 0; i < tiles.length * COPIES; i++) {
+      src = tiles[(i + r * 2) % tiles.length];
+      img = document.createElement("img");
+      img.src = src;
+      img.alt = "";
+      if (circles[src]) img.className = "tile-circle";
+      row.appendChild(img);
     }
-    return html;
+    wall.appendChild(row);
   }
-  document.getElementById("row-a").innerHTML = rowHtml(0);
-  document.getElementById("row-b").innerHTML = rowHtml(2);
-  document.getElementById("row-c").innerHTML = rowHtml(4);
-  document.getElementById("row-d").innerHTML = rowHtml(1);
 })();

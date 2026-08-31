@@ -14,7 +14,7 @@
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
+    html, body { margin: 0; height: 100%; min-height: 100dvh; }
     body {
       font-family: ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
       background: #000;
@@ -29,20 +29,21 @@
     }
     #splash {
       position: relative;
-      min-height: 100vh;
+      min-height: 100dvh;
+      height: 100dvh;
       overflow: hidden;
     }
     .poster-stage {
       position: absolute;
-      inset: -18%;
-      perspective: 900px;
+      inset: -48%;
+      perspective: 1100px;
       pointer-events: none;
     }
     .poster-wall {
       display: flex;
       flex-direction: column;
       gap: 16px;
-      transform: rotateX(20deg) rotateZ(-8deg) scale(1.28);
+      transform: rotateX(12deg) rotateZ(-3deg) scale(1.62);
       transform-origin: center center;
     }
     .poster-row {
@@ -78,8 +79,8 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse at center, rgba(0,0,0,.18) 10%, rgba(0,0,0,.62) 52%, #000 78%),
-        linear-gradient(to bottom, rgba(0,0,0,.82) 0%, transparent 26%, transparent 70%, #000 100%);
+        radial-gradient(ellipse at center, rgba(0,0,0,.12) 8%, rgba(0,0,0,.42) 58%, rgba(0,0,0,.62) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.5) 0%, transparent 22%, transparent 78%, rgba(0,0,0,.5) 100%);
       pointer-events: none;
     }
     .splash-nav {
@@ -217,10 +218,7 @@
   <div id="splash">
     <div class="poster-stage" aria-hidden="true">
       <div class="poster-wall">
-        <div class="poster-row" id="row-a"></div>
-        <div class="poster-row" id="row-b"></div>
-        <div class="poster-row" id="row-c"></div>
-        <div class="poster-row" id="row-d"></div>
+        <div class="poster-row"></div>
       </div>
     </div>
     <div class="vignette"></div>
