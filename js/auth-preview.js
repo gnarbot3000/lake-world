@@ -19,22 +19,16 @@
     document.body.appendChild(s);
   }
 
-  function canLoadClubRoster() {
-    try {
-      if (location.protocol === "file:") return true;
-    } catch (err) {}
-    return !!(window.LAKE_USER_ID);
+  function loadApp() {
+    loadScript("app.js", function () {
+      loadScript("club-ui.js");
+    });
   }
 
-  function loadApp() {
-    var start = function () {
-      loadScript("app.js");
-    };
-    if (canLoadClubRoster()) {
-      loadScript("club-roster.js", start);
-    } else {
-      start();
-    }
+  function guestClub() {
+    return window.LakeClub
+      ? window.LakeClub.emptyState("guest")
+      : { status: "guest", isAdmin: false, members: [], me: null, juniors: [], pending: [], invites: [], admins: [] };
   }
 
   function bindSignOut(sb) {
@@ -50,9 +44,26 @@
     });
   }
 
+  function maybeRedirectInvite(user) {
+    var token = "";
+    try {
+      token = window.LakeClub ? window.LakeClub.tokenFromUrl() : "";
+    } catch (err) {}
+    if (!token) return false;
+    if (user) return false;
+    try {
+      location.href = "../invite.html?token=" + encodeURIComponent(token);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   function boot() {
     window.LAKE_USER_ID = window.LAKE_USER_ID || "";
     window.LAKE_USER_EMAIL = window.LAKE_USER_EMAIL || "";
+    window.LAKE_SB = null;
+    window.LAKE_CLUB = guestClub();
     paintAuth("");
 
     if (!window.supabase || !window.LAKE_SUPABASE_URL || !window.LAKE_SUPABASE_ANON) {
@@ -70,6 +81,7 @@
       return;
     }
 
+    window.LAKE_SB = sb;
     bindSignOut(sb);
     sb.auth.getSession().then(function (result) {
       var session = result && result.data && result.data.session;
@@ -79,12 +91,17 @@
         window.LAKE_USER_EMAIL = user.email || "";
         paintAuth(window.LAKE_USER_EMAIL);
       }
+      if (maybeRedirectInvite(user)) return null;
+      if (!user || !window.LakeClub) return window.LAKE_CLUB;
+      return window.LakeClub.boot(sb, user);
     }).catch(function () {
-      /* guest still works */
-    }).then(function () {
+      return window.LAKE_CLUB;
+    }).then(function (state) {
+      if (!state) return;
+      window.LAKE_CLUB = state;
       loadApp();
     });
   }
 
-  boot();
+  loadScript("../js/club.js", boot);
 })();

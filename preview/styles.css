@@ -1137,3 +1137,152 @@ input:focus-visible {
   .add-skier-form input[type="text"] { flex: 1 1 100%; }
   .add-skier-form .btn-primary { width: 100%; }
 }
+
+
+/* ---- club invite / admin / gates ---- */
+.mast-admin-link,
+.preview-nav {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--chip);
+  text-decoration: none;
+  border: 2px solid var(--chip);
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mast-admin-link[hidden] { display: none; }
+.mast-admin-link:hover,
+.preview-nav:hover { background: var(--track); }
+
+.gate-card {
+  margin: 0.85rem 1rem 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.95rem 1rem 1.05rem;
+}
+.gate-title {
+  margin: 0.15rem 0 0.45rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+}
+.gate-card .btn-primary { margin-top: 0.65rem; }
+.gate-card .btn-ghost { margin-top: 0.45rem; }
+.gate-card input[type="email"],
+.gate-card input[type="password"],
+.invite-link-box input[type="text"] {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  min-height: var(--tap);
+  margin: 0.25rem 0 0.55rem;
+}
+
+.club-error {
+  margin: 0.65rem 1rem 0;
+  color: #b42318;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.club-error[hidden],
+#pending-gate[hidden],
+#denied-gate[hidden],
+#invite-only-note[hidden],
+#club-tools[hidden],
+#admin-app[hidden],
+#admin-gate[hidden],
+#pending-section[hidden],
+#admins-section[hidden] { display: none; }
+
+.btn-ghost {
+  appearance: none;
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 0 1rem;
+  min-height: var(--cta);
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.invite-kind {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.invite-kind label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+}
+
+.invite-link-box {
+  margin-top: 0.75rem;
+}
+.invite-link-box[hidden] { display: none; }
+
+.club-tools { margin-bottom: 1rem; }
+
+.roster-names {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.roster-name {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-weight: 700;
+}
+
+.admin-list {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.admin-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.65rem 0.7rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.admin-row-main { min-width: 0; }
+.admin-row .btn-primary,
+.admin-row .btn-ghost { width: 100%; min-height: 44px; margin-top: 0; }
+.admin-meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mute);
+}
+
+#login-form .chip-label { margin-top: 0.35rem; }
