@@ -1,13 +1,28 @@
 (function () {
   var tiles = [
     "img/slalom-wake.jpg",
+    "img/dock-skis.jpg",
     "img/kneeboard.jpg",
+    "img/kiteboard.jpg",
     "img/course.jpg",
+    "img/slalom-cut.jpg",
     "img/buoys.jpg",
+    "img/wingfoil.jpg",
     "img/boat.jpg",
-    "img/spray.jpg"
+    "img/twin-ski.jpg",
+    "img/spray.jpg",
+    "img/dock-dusk.jpg",
+    "img/ski-boat-pull.jpg",
+    "img/jump-ramp.jpg",
+    "img/kneeboard-turn.jpg",
+    "img/course-overhead.jpg",
+    "img/handle-close.jpg",
+    "img/ski-edge.jpg"
   ];
-  var circles = { "img/buoys.jpg": true };
+  var circles = {
+    "img/buoys.jpg": true,
+    "img/handle-close.jpg": true
+  };
   var wall = document.querySelector(".poster-wall");
   if (!wall) return;
   wall.innerHTML = "";
