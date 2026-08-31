@@ -2,7 +2,7 @@
   "use strict";
 
   var STORAGE_KEY = "nrs-ski-lake-tricks-v2" + (window.LAKE_USER_ID ? "-" + window.LAKE_USER_ID : "");
-  var CLUB = "North Ridgeville Ski Lake";
+  var CLUB = "Ski Paradise Ohio";
   var IDB_NAME = "nrs-ski-lake-tricks-v2";
   var IDB_STORE = "media";
 
@@ -39,92 +39,44 @@
   var BUOY_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6];
   var DEFAULT_PASS = { off: 15, mph: 28 };
 
-  /* Demo club only — fake North Ridgeville-ish names, tagged seed:true so a reload does not duplicate. */
+  var SEED_GEN = "ski-paradise-ohio-1";
+
+  /* Ski Paradise Ohio roster — real members, empty logs. Tagged seed:true so a reload does not duplicate. */
   var SEED_SKIERS = [
-    {
-      id: "seed-mike",
-      name: "Mike Raines",
-      selectedPass: { off: 22, mph: 32 },
-      slalomSets: [
-        { id: "seed-mike-1", date: "2026-08-16", off: 22, mph: 32, buoys: 6 },
-        { id: "seed-mike-2", date: "2026-07-26", off: 22, mph: 34, buoys: 5 }
-      ]
-    },
-    {
-      id: "seed-sarah",
-      name: "Sarah Polk",
-      selectedPass: { off: 15, mph: 30 },
-      slalomSets: [
-        { id: "seed-sarah-1", date: "2026-08-23", off: 15, mph: 34, buoys: 5.5 },
-        { id: "seed-sarah-2", date: "2026-06-21", off: 15, mph: 30, buoys: 6 }
-      ]
-    },
-    {
-      id: "seed-dave",
-      name: "Dave Keene",
-      selectedPass: { off: 22, mph: 30 },
-      slalomSets: [
-        { id: "seed-dave-1", date: "2026-08-09", off: 22, mph: 30, buoys: 4 }
-      ]
-    },
-    {
-      id: "seed-amy",
-      name: "Amy Voss",
-      selectedPass: { off: 15, mph: 32 },
-      slalomSets: [
-        { id: "seed-amy-1", date: "2026-08-31", off: 15, mph: 32, buoys: 4 },
-        { id: "seed-amy-2", date: "2026-08-30", off: 15, mph: 32, buoys: 6 }
-      ]
-    },
-    {
-      id: "seed-chris",
-      name: "Chris Hallow",
-      selectedPass: { off: 15, mph: 28 },
-      slalomSets: [
-        { id: "seed-chris-1", date: "2026-07-19", off: 15, mph: 28, buoys: 3.5 }
-      ]
-    },
-    {
-      id: "seed-jen",
-      name: "Jen Marchetti",
-      selectedPass: { off: 22, mph: 32 },
-      slalomSets: [
-        { id: "seed-jen-1", date: "2026-08-02", off: 22, mph: 32, buoys: 5 }
-      ]
-    },
-    {
-      id: "seed-ryan",
-      name: "Ryan Stoltz",
-      selectedPass: { off: 15, mph: 36 },
-      slalomSets: [
-        { id: "seed-ryan-1", date: "2026-08-24", off: 15, mph: 36, buoys: 4.5 }
-      ]
-    },
-    {
-      id: "seed-lisa",
-      name: "Lisa Nguyen",
-      selectedPass: { off: 28, mph: 32 },
-      slalomSets: [
-        { id: "seed-lisa-1", date: "2026-08-17", off: 28, mph: 32, buoys: 6 },
-        { id: "seed-lisa-2", date: "2026-08-03", off: 22, mph: 34, buoys: 5.5 }
-      ]
-    },
-    {
-      id: "seed-tom",
-      name: "Tom Bridger",
-      selectedPass: { off: 15, mph: 30 },
-      slalomSets: [
-        { id: "seed-tom-1", date: "2026-07-12", off: 15, mph: 30, buoys: 2.5 }
-      ]
-    },
-    {
-      id: "seed-nate",
-      name: "Nate Crowley",
-      selectedPass: { off: 15, mph: 32 },
-      slalomSets: [
-        { id: "seed-nate-1", date: "2026-08-31", off: 15, mph: 32, buoys: 5 }
-      ]
-    }
+    { id: "seed-greg-alber", name: "Greg Alber", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-judy-beckenbach", name: "Judy Beckenbach", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-shannon-cochrane", name: "Shannon Cochrane", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-tim-cochrane", name: "Tim Cochrane", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-nancy-dadas", name: "Nancy Dadas", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-nick-dadas", name: "Nick Dadas", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-teri-fetherolf", name: "Teri Fetherolf", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-jackie-frilling", name: "Jackie Frilling", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-travis-frilling", name: "Travis Frilling", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-julie-gray", name: "Julie Gray", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-troy-gray", name: "Troy Gray", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-joe-guinter", name: "Joe Guinter", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-michelle-guinter", name: "Michelle Guinter", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-agata-hageman", name: "Agata Hageman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-joel-hageman", name: "Joel Hageman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-jeff-hastings", name: "Jeff Hastings", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-jenny-hohman", name: "Jenny Hohman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-lewie-hohman", name: "Lewie Hohman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-deborah-logan", name: "Deborah Logan", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-justin-logan", name: "Justin Logan", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-michelle-loufman", name: "Michelle Loufman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-mike-loufman", name: "Mike Loufman", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-don-lydon", name: "Don Lydon", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-jackie-matus", name: "Jackie Matus", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-mike-nichols", name: "Mike Nichols", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-doug-poe", name: "Doug Poe", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-joel-rathbun", name: "Joel Rathbun", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-mary-ellen-voiers", name: "Mary Ellen Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-rick-voiers", name: "Rick Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-rm-voiers", name: "RM Voiers", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-brad-way", name: "Brad Way", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-laura-way", name: "Laura Way", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-laura-zangmeister", name: "Laura Zangmeister", selectedPass: { off: 15, mph: 28 }, slalomSets: [] },
+    { id: "seed-steve-zangmeister", name: "Steve Zangmeister", selectedPass: { off: 15, mph: 28 }, slalomSets: [] }
   ];
 
   var TROPHY_DEFS = [
@@ -166,14 +118,16 @@
       club: CLUB,
       units: "mph",
       people: [p],
-      currentPersonId: p.id
+      currentPersonId: p.id,
+      seedGen: ""
     };
   }
 
   function makeSeedPerson(spec) {
     var p = emptyPerson(spec.id, spec.name);
     p.seed = true;
-    p.selectedPass = normalizePass(spec.selectedPass.off, spec.selectedPass.mph);
+    var pass = spec.selectedPass && typeof spec.selectedPass === "object" ? spec.selectedPass : {};
+    p.selectedPass = normalizePass(pass.off, pass.mph);
     p.slalomSets = normalizeSets(spec.slalomSets);
     p.score = 0;
     p.trophies = [];
@@ -191,9 +145,32 @@
 
   function ensureSeedSkiers() {
     if (!state || !Array.isArray(state.people)) return;
-    if (hasSeedPeople(state.people)) return;
-    var added = false;
-    var i, j;
+    var changed = false;
+    var i;
+    var j;
+    if (state.seedGen !== SEED_GEN) {
+      var kept = [];
+      for (i = 0; i < state.people.length; i++) {
+        if (state.people[i] && state.people[i].seed === true) continue;
+        kept.push(state.people[i]);
+      }
+      if (!kept.length) {
+        kept = [emptyPerson("p1", "")];
+      }
+      state.people = kept;
+      var found = false;
+      for (i = 0; i < kept.length; i++) {
+        if (kept[i].id === state.currentPersonId) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) state.currentPersonId = kept[0].id;
+      state.seedGen = SEED_GEN;
+      changed = true;
+    } else if (hasSeedPeople(state.people)) {
+      return;
+    }
     for (i = 0; i < SEED_SKIERS.length; i++) {
       var spec = SEED_SKIERS[i];
       var exists = false;
@@ -206,9 +183,9 @@
       if (exists) continue;
       if (nameTaken(spec.name)) continue;
       state.people.push(makeSeedPerson(spec));
-      added = true;
+      changed = true;
     }
-    if (added) save(state);
+    if (changed) save(state);
   }
 
   function copySport(src) {
@@ -283,6 +260,7 @@
       if (!parsed || typeof parsed !== "object") return base;
       if (parsed.units === "kph" || parsed.units === "mph") base.units = parsed.units;
       base.club = CLUB;
+      if (typeof parsed.seedGen === "string") base.seedGen = parsed.seedGen;
       if (Array.isArray(parsed.people) && parsed.people.length) {
         var people = [];
         var i;
@@ -331,7 +309,8 @@
       club: next.club,
       units: next.units,
       people: next.people,
-      currentPersonId: next.currentPersonId
+      currentPersonId: next.currentPersonId,
+      seedGen: next.seedGen || ""
     }));
   }
 
