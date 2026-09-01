@@ -688,6 +688,22 @@ input[type="date"] {
   min-height: 1.2em;
 }
 
+.best-chart {
+  margin: 0.4rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+.best-chart[hidden] { display: none; }
+
+.chart-preview {
+  margin: 0.55rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
 .buoy-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -708,10 +724,24 @@ input[type="date"] {
   cursor: pointer;
 }
 
+.buoy-btn.is-on {
+  background: var(--chip);
+  color: #FFFFFF;
+  border-color: var(--chip);
+}
+
 .buoy-btn:focus-visible,
 .chip:focus-visible {
   outline: 2px solid var(--chip);
   outline-offset: 2px;
+}
+
+#submit-set-btn {
+  margin-top: 0.75rem;
+}
+#submit-set-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ---- Hevy-like set table ---- */
@@ -720,7 +750,7 @@ input[type="date"] {
 .sets-head,
 .set-cols {
   display: grid;
-  grid-template-columns: 1.35fr 0.95fr 0.95fr 0.7fr;
+  grid-template-columns: 1.15fr minmax(0, 1.7fr) 3.1rem;
   gap: 0.25rem;
   align-items: center;
   font-variant-numeric: tabular-nums;
@@ -1048,12 +1078,12 @@ input:focus-visible {
 
 .session-head,
 .session-cols {
-  grid-template-columns: 1.25fr 0.9fr 0.9fr 0.7fr;
+  grid-template-columns: 1.15fr minmax(0, 1.7fr) 3.1rem;
 }
 
 .club-head,
 .club-cols {
-  grid-template-columns: 1.5rem minmax(0, 1.15fr) 3.35rem minmax(0, 0.85fr) minmax(0, 0.85fr) 2.35rem;
+  grid-template-columns: 1.5rem minmax(0, 1.05fr) 3.2rem minmax(0, 1.45fr) 3.1rem;
 }
 
 .board-head {
@@ -1092,7 +1122,9 @@ input:focus-visible {
 .board-row.is-first:not(.is-you) .board-date,
 .board-row.is-first:not(.is-you) .board-line,
 .board-row.is-first:not(.is-you) .board-speed,
-.board-row.is-first:not(.is-you) .board-rank {
+.board-row.is-first:not(.is-you) .board-rank,
+.board-row.is-first:not(.is-you) .board-chart,
+.board-row.is-first:not(.is-you) .board-pass {
   color: var(--on-navy);
 }
 
@@ -1122,15 +1154,171 @@ input:focus-visible {
 
 .board-name { font-weight: 800; }
 
-.board-buoys {
+.board-buoys,
+.board-chart {
   font-weight: 800;
   font-size: 1.05rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
+.board-pass {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .session-cols,
 .club-cols { width: 100%; min-width: 0; }
+
+.recency-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
+  min-height: var(--tap);
+}
+.recency-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.recency-top .board-name { flex: 1; }
+.recency-top .board-date { flex: 0 0 auto; text-align: right; }
+.recency-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.65rem;
+  min-width: 0;
+}
+.recency-kind {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--chip);
+}
+.recency-trick {
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recency-mode {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mute);
+}
+.recency-row.is-you .recency-kind { color: var(--navy); }
+.recency-row .board-buoys,
+.recency-row .board-chart { text-align: left; }
+
+.recency-social {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--line);
+}
+.highfive-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--chip);
+  background: transparent;
+  border: 2px solid var(--chip);
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 0.85rem;
+  cursor: pointer;
+}
+.highfive-btn.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.highfive-icon { display: block; flex: 0 0 auto; }
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.comment-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.82rem;
+}
+.comment-author {
+  font-weight: 800;
+  color: var(--navy);
+}
+.comment-body {
+  grid-column: 1 / 2;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.comment-delete {
+  appearance: none;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: start;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mute);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  min-height: 36px;
+}
+.comment-form {
+  display: flex;
+  gap: 0.4rem;
+}
+.comment-form input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.88rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 0.7rem;
+  min-height: 44px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.comment-form button {
+  appearance: none;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--navy);
+  border: 0;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  cursor: pointer;
+}
 
 @media (max-width: 430px) {
   .add-skier-form .add-row { flex-wrap: wrap; }

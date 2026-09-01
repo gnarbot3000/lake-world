@@ -20,7 +20,12 @@
     last_admin: "The club needs at least one admin.",
     not_approved_adult: "Only an approved adult member can be an admin.",
     not_found: "Could not find that member.",
-    bad_status: "That status is not allowed."
+    bad_status: "That status is not allowed.",
+    not_your_log: "You can only log your sets and your juniors.",
+    bad_set: "That slalom set is not valid.",
+    bad_trick: "That kneeboard trick is not valid.",
+    bad_comment: "Type a short comment (280 characters or fewer).",
+    not_your_comment: "You can only delete your own comment."
   };
 
   function emptyState(status) {
@@ -174,6 +179,57 @@
 
     removeAdmin: function (sb, userId) {
       return rpc(sb, "remove_club_admin", { p_user_id: userId });
+    },
+
+    logSlalom: function (sb, row) {
+      return rpc(sb, "log_slalom_set", {
+        p_id: row.id,
+        p_member_id: row.memberId,
+        p_off: row.off,
+        p_mph: row.mph,
+        p_buoys: row.buoys
+      });
+    },
+
+    deleteSlalom: function (sb, id) {
+      return rpc(sb, "delete_slalom_log", { p_id: id });
+    },
+
+    logKneeboard: function (sb, row) {
+      return rpc(sb, "log_kneeboard_trick", {
+        p_id: row.id,
+        p_member_id: row.memberId,
+        p_logged_at: row.loggedAt || null,
+        p_trick_name: row.trickName,
+        p_mode: row.mode
+      });
+    },
+
+    deleteKneeboard: function (sb, id) {
+      return rpc(sb, "delete_kneeboard_log", { p_id: id });
+    },
+
+    recency: function (sb) {
+      return rpc(sb, "club_recency", { p_limit: 50 });
+    },
+
+    toggleHighFive: function (sb, kind, logId) {
+      return rpc(sb, "toggle_log_high_five", {
+        p_kind: kind,
+        p_log_id: logId
+      });
+    },
+
+    addComment: function (sb, kind, logId, body) {
+      return rpc(sb, "add_log_comment", {
+        p_kind: kind,
+        p_log_id: logId,
+        p_body: body
+      });
+    },
+
+    deleteComment: function (sb, id) {
+      return rpc(sb, "delete_log_comment", { p_id: id });
     },
 
     refresh: function (sb) {

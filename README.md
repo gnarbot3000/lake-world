@@ -8,7 +8,7 @@ Brand is **lake.world** (not “Lake World”). Email/password on the splash (la
 - `preview/admin.html` — members create invites; admins approve/deny and add/remove admins.
 - `supabase/migrations/` — SQL for Darin to paste into the **lake.world** SQL editor. Do not run it against vinyl-archive.
 
-Club is invite-only. The hosted board does not seed the old 30-name list. Sets/tricks stay on this device in this PR; roster/invites/admins are Supabase.
+Club is invite-only. The hosted board does not seed the old 30-name list. Roster, invites, admins, club recency, High fives, and comments live in lake.world Supabase. Guest Preview stays personal-only on this device.
 
 Domain sits at Squarespace. Registrar stays Squarespace. Separate from hibala.com.
 

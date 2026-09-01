@@ -109,7 +109,7 @@
           <div id="pending-juniors" hidden></div>
         </div>
 
-        <p class="legend">Tap a buoy count to log this set’s best run.</p>
+        <p class="legend">Pick line, speed, and buoy count, then Submit this set’s best run. Chart rank: faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph). After 36 mph, more off is harder, then buoys.</p>
 
         <div class="chip-group">
           <p class="chip-label" id="line-label">Line length</p>
@@ -125,18 +125,28 @@
           <p class="best-kicker">Best</p>
           <p class="best-number" id="slalom-best-number">—</p>
           <p class="best-setup" id="slalom-best-setup"></p>
+          <p class="best-chart" id="slalom-best-chart" hidden></p>
         </div>
 
         <div class="chip-group">
           <p class="chip-label" id="buoy-label">Best run</p>
           <div class="buoy-grid" role="group" aria-labelledby="buoy-label" id="buoy-chips"></div>
+          <button type="button" class="btn-primary" id="submit-set-btn" data-act="submit-set" disabled>Submit set</button>
+          <p class="chart-preview" id="chart-preview">Pick a buoy count to see this set’s chart rank.</p>
+        </div>
+
+        <div class="board-block" id="recency-board" hidden>
+          <h2 class="board-title">Recent logs</h2>
+          <p class="board-kicker">Ski Paradise Cleveland</p>
+          <ul class="board-list" id="recency-list"></ul>
+          <p class="shelf-empty" id="recency-empty">No club logs yet.</p>
         </div>
 
         <div class="board-block" id="latest-session">
           <h2 class="board-title" id="latest-session-heading">Latest session</h2>
           <div class="board-table">
             <div class="board-head session-head" id="session-head" hidden>
-              <span>Skier</span><span>Line</span><span>Speed</span><span>Buoys</span>
+              <span>Skier</span><span>Pass</span><span>Chart</span>
             </div>
             <ul class="board-list" id="session-list"></ul>
           </div>
@@ -154,7 +164,7 @@
           <p class="board-kicker">Ski Paradise Cleveland</p>
           <div class="board-table">
             <div class="board-head club-head" id="club-head" hidden>
-              <span>Rank</span><span>Skier</span><span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Pass</span><span>Chart</span>
             </div>
             <ul class="board-list" id="club-list"></ul>
           </div>
@@ -166,7 +176,7 @@
           <p class="board-kicker">Top performances</p>
           <div class="board-table">
             <div class="board-head club-head" id="best-head" hidden>
-              <span>Rank</span><span>Skier</span><span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Pass</span><span>Chart</span>
             </div>
             <ul class="board-list" id="best-list"></ul>
           </div>
@@ -177,7 +187,7 @@
           <h2 class="chip-label">This skier’s sets</h2>
           <div class="sets-table">
             <div class="sets-head" id="sets-head" hidden>
-              <span>Date</span><span>Line</span><span>Speed</span><span>Buoys</span>
+              <span>Date</span><span>Pass</span><span>Chart</span>
             </div>
             <ul class="set-history" id="set-history"></ul>
           </div>

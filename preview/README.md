@@ -46,25 +46,24 @@ The hosted Mini does **not** seed the old 30-name list. `preview/club-roster.js`
 
 **Privacy (hosted):** guest Preview on https is personal-only — themselves, no live club roster, boards hidden, note **Sign in to see Ski Paradise Cleveland.** `file://` Mini stays a personal logbook without the live club roster. Only invited **and** admin-approved people appear on roster / board / dropdown.
 
-Roster / invites / admins live in lake.world Supabase. Slalom/kneeboard **sets stay on this device** in this PR (localStorage + IndexedDB). The club board on a given browser only shows sets logged there for you and your juniors.
+Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitted slalom sets and kneeboard landings) are shared for approved members, with High fives and comments. Personal Mini history can stay on this device. Guest Preview is personal-only. Do not seed fake club performances.
 
-## Latest session vs club board
+## Recent logs vs local boards
 
-Two slalom boards, different windows:
+- **Recent logs** — hosted, approved members only. Newest first, mixing submitted slalom sets and kneeboard landings. Slalom rows show name, date/time, pass (buoys · line · speed), and **Chart**. Kneeboard rows show name, date, trick, easy unlock / hard log. Members can **High five** (one per member per log, toggle off) and comment. Comments show the author’s display name; you can delete your own. No photos/video on recency. Guests and pending users do not see this board.
+- **Latest session** / **Club board** / **Best 10** — this-device personal boards for you and your juniors. Ranking follows the **slalom chart**, not raw buoy count: faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph); after 36 mph, more off is harder; then buoys. The **Chart** number is that conversion, shown on the slalom screen and on the boards. Empty copy unchanged.
 
-- **Latest session** — the most recent date that appears on anyone’s `slalomSets` (not necessarily today). Heading like `Latest session · Aug 31`. One row per skier who logged that date, showing **their best run that day** (same tie-break). Columns: Skier · Line · Speed · **Buoys**. Current skier’s row is lime. Empty: `No session yet.` Rows sort hardest pass first.
-- **Club board** — Ski Paradise Cleveland, all-time. One row per skier who has at least one set, ranked by **career best** (more buoys, then shorter line / higher off, then faster mph). Columns: Rank · Skier · **Date** · Line · Speed · **Buoys**. The date is the day of that career-best run. Rank 1 is emphasized; current skier is highlighted. Empty: `Log a set to open the board.`
-- **Best 10** — top 10 individual sets across the whole club (not one-row-per-skier; the same skier can appear more than once). Same sort as career best. Columns: Rank · Skier · Date · Line · Speed · Buoys. Current skier’s rows are lime. Empty: `No performances yet.`
+Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there.
 
-Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there — no extra hunt.
-
-Slalom tab order: invite tools (approved members) → line / speed / best-run chips + personal best → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
+Slalom tab order: invite tools (approved members) → line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
 
 ## Slalom — best of the set
 
 A set is 4–6 passes through the course. Log only the **best run** of that set.
 
-Pick **line length** and **boat speed**, then tap the buoy count (**1 through 6 in halves**). That logs the set immediately: line, speed, buoys, today’s date. A tiny toast confirms it. **Buoys** is the official balls scored (1–6 in halves). History sits under the boards (newest first). Delete a set if you tapped wrong.
+Pick **line length**, **boat speed**, and buoy count (**1 through 6 in halves**). Nothing is posted until **Submit set**. Submit adds the set to this skier’s personal history and, for an approved member, to club recency. A tiny toast confirms it. **Buoys** is the official balls scored (1–6 in halves). History sits under the boards (newest first). Delete a set if you tapped wrong. Members submit only for themselves or their juniors. Guests stay personal-only.
+
+**Chart rank** (not a tournament total): faster boat at the same line is a harder pass. Completing more of the ladder beats hanging at a slower speed. After max speed (36 mph), shorter line (more off) is harder, then buoys on that pass. The slalom screen and leaderboards show this Chart conversion. No Long line.
 
 There is no working-range window, no bump-up after a 6, and **no ZBS**.
 
@@ -81,7 +80,7 @@ Speeds: **28 / 30 / 32 / 34 / 36 mph** ↔ **46 / 49 / 52 / 55 / 58 kph**. Tappi
 
 No **Long line** option (starts at 15 off / 18.25 m). Default selected line/speed if unset: **15 off @ 28 mph**.
 
-Who-bar **Slalom** shows the buoy count of the *current skier’s* best logged run, plus that setup in short form (example: `Slalom · 4.5` with `15 off · 32 mph`). If two runs share the same buoy count, the harder setup wins: shorter line, then faster speed. No sets yet: `Slalom · —`.
+Who-bar **Slalom** shows the buoy count of the *current skier’s* best logged run, plus setup and Chart (example: `Slalom · 4` with `15 off · 30 mph · chart 28`). Best follows the chart, not raw buoy count. No sets yet: `Slalom · —`.
 
 ## Score
 
