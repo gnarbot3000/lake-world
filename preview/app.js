@@ -484,6 +484,40 @@
     return months[m - 1] + " " + day;
   }
 
+  function prettyDateTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      var raw = String(iso);
+      if (raw.length >= 10) return prettyDateShort(raw.slice(0, 10));
+      return raw;
+    }
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12;
+    if (!h12) h12 = 12;
+    var mins = m < 10 ? "0" + m : String(m);
+    return months[d.getMonth()] + " " + d.getDate() + ", " + h12 + ":" + mins + " " + ampm;
+  }
+
+  function isoDay(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      var raw = String(iso);
+      return raw.length >= 10 ? raw.slice(0, 10) : raw;
+    }
+    return d.getFullYear() + "-" + padNum(d.getMonth() + 1) + "-" + padNum(d.getDate());
+  }
+
+  function kneeboardLoggedAt(day) {
+    if (!day) return new Date().toISOString();
+    if (day === todayISO()) return new Date().toISOString();
+    return day + "T16:00:00.000Z";
+  }
+
   function minISO(a, b) {
     if (!a) return b || null;
     if (!b) return a;
@@ -586,8 +620,27 @@
     return null;
   }
 
+  function newUuid() {
+    try {
+      if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    } catch (err) {}
+    var bytes = new Uint8Array(16);
+    var i;
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+    else for (i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    var hex = "";
+    for (i = 0; i < 16; i++) hex += ("0" + bytes[i].toString(16)).slice(-2);
+    return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
+  }
+
+  function isUuid(s) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s || ""));
+  }
+
   function newSetId() {
-    return "set-" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+    return newUuid();
   }
 
   function normalizeSets(src) {
@@ -647,17 +700,53 @@
   }
 
   function formatBuoys(n) {
-    return String(n);
+    var v = typeof n === "number" ? n : parseFloat(n);
+    if (isNaN(v)) return n == null ? "" : String(n);
+    return String(v);
   }
 
-  /* more buoys, then shorter line / higher off, then faster mph */
+  function speedIndex(mph) {
+    var i = SLALOM_MPHS.indexOf(parseInt(mph, 10));
+    return i < 0 ? 0 : i;
+  }
+
+  function lineIndex(off) {
+    var i = SLALOM_OFFS.indexOf(parseInt(off, 10));
+    return i < 0 ? 0 : i;
+  }
+
+  /* Chart: faster boat first, then shorter line (more off), then buoys.
+     Same line: 4 @ 30 mph beats 6 @ 28 mph. After 36 mph, more off is harder. */
+  function chartScore(set) {
+    if (!set) return 0;
+    var buoys = typeof set.buoys === "number" ? set.buoys : parseFloat(set.buoys);
+    if (isNaN(buoys)) buoys = 0;
+    return speedIndex(set.mph) * (SLALOM_OFFS.length * 6) + lineIndex(set.off) * 6 + buoys;
+  }
+
+  function formatChart(n) {
+    var v = typeof n === "number" ? n : parseFloat(n);
+    if (isNaN(v)) return "—";
+    return String(v);
+  }
+
+  function chartText(set) {
+    if (!set) return "—";
+    return formatChart(chartScore(set));
+  }
+
+  function passLabel(set) {
+    if (!set) return "";
+    return formatBuoys(set.buoys) + " · " + setupShort(set);
+  }
+
   function compareSetsDesc(a, b) {
     if (!a && !b) return 0;
     if (!a) return 1;
     if (!b) return -1;
-    if (a.buoys !== b.buoys) return b.buoys - a.buoys;
-    if (a.off !== b.off) return b.off - a.off;
-    if (a.mph !== b.mph) return b.mph - a.mph;
+    var ca = chartScore(a);
+    var cb = chartScore(b);
+    if (ca !== cb) return cb - ca;
     return 0;
   }
 
@@ -881,7 +970,7 @@
         slSub.textContent = "";
         slSub.hidden = true;
       } else {
-        slSub.textContent = setupShort(best);
+        slSub.textContent = setupShort(best) + " · chart " + chartText(best);
         slSub.hidden = false;
       }
     }
@@ -891,9 +980,14 @@
   function paintSlalomBest() {
     var num = document.getElementById("slalom-best-number");
     var setup = document.getElementById("slalom-best-setup");
+    var chartEl = document.getElementById("slalom-best-chart");
     var best = bestSet();
     if (num) num.textContent = best ? formatBuoys(best.buoys) : "—";
     if (setup) setup.textContent = best ? setupShort(best) : "";
+    if (chartEl) {
+      chartEl.textContent = best ? ("Chart " + chartText(best)) : "";
+      chartEl.hidden = !best;
+    }
   }
 
   function medalSvg() {
@@ -1018,6 +1112,11 @@
   var state = load();
   ensureSeedSkiers();
   syncClubPeople();
+
+  var recencyRows = [];
+  var recencyError = "";
+  var recencyTimer = null;
+  var draftBuoys = null;
 
   /* ---- IndexedDB media (file:// safe: no modules, no server fetch) ---- */
 
@@ -1338,6 +1437,132 @@
     renderSlalom();
   }
 
+  function hostEnabled() {
+    return !!(clubVisible() && window.LAKE_SB && window.LakeClub);
+  }
+
+  function memberIdFor(person) {
+    return (person && person.memberId) || "";
+  }
+
+  function afterHostChange() {
+    if (recencyTimer) clearTimeout(recencyTimer);
+    recencyTimer = setTimeout(loadRecency, 60);
+  }
+
+  function loadRecency() {
+    if (!clubVisible() || !hostEnabled() || typeof window.LakeClub.recency !== "function") {
+      recencyRows = [];
+      recencyError = "";
+      renderRecency();
+      return;
+    }
+    window.LakeClub.recency(window.LAKE_SB).then(function (data) {
+      if (data && data.ok === false) {
+        recencyRows = [];
+        recencyError = data.error || "";
+      } else {
+        recencyRows = (data && data.rows) || [];
+        recencyError = "";
+      }
+      renderRecency();
+    }).catch(function () {
+      recencyRows = [];
+      renderRecency();
+    });
+  }
+
+  function pushSlalomLog(person, row) {
+    if (!hostEnabled() || !row || !isUuid(row.id)) return;
+    var mid = memberIdFor(person);
+    if (!mid) return;
+    window.LakeClub.logSlalom(window.LAKE_SB, {
+      id: row.id,
+      memberId: mid,
+      off: row.off,
+      mph: row.mph,
+      buoys: row.buoys
+    }).then(afterHostChange).catch(function () {});
+  }
+
+  function dropSlalomLog(id) {
+    if (!hostEnabled() || !isUuid(id)) return;
+    window.LakeClub.deleteSlalom(window.LAKE_SB, id).then(afterHostChange).catch(function () {});
+  }
+
+  function dropKneeboardIds(ids) {
+    if (!hostEnabled() || !ids || !ids.length) return;
+    var jobs = [];
+    var i;
+    for (i = 0; i < ids.length; i++) {
+      if (isUuid(ids[i])) jobs.push(window.LakeClub.deleteKneeboard(window.LAKE_SB, ids[i]));
+    }
+    if (!jobs.length) return;
+    Promise.all(jobs).then(afterHostChange).catch(afterHostChange);
+  }
+
+  function hostPushKneeboardNew(person, entry, index, trickName, mode) {
+    if (!hostEnabled() || !entry) return;
+    var mid = memberIdFor(person);
+    if (!mid) return;
+    if (!Array.isArray(entry.remoteIds)) entry.remoteIds = [];
+    while (entry.remoteIds.length <= index) entry.remoteIds.push("");
+    if (!isUuid(entry.remoteIds[index])) entry.remoteIds[index] = newUuid();
+    var day = (entry.dates && entry.dates[index]) || todayISO();
+    window.LakeClub.logKneeboard(window.LAKE_SB, {
+      id: entry.remoteIds[index],
+      memberId: mid,
+      trickName: trickName,
+      mode: mode === "hard" ? "hard" : "easy",
+      loggedAt: kneeboardLoggedAt(day)
+    }).then(afterHostChange).catch(function () {});
+  }
+
+  function hostUpdateKneeboard(person, entry, index, trickName, mode) {
+    if (!hostEnabled() || !entry || !entry.remoteIds) return;
+    if (!isUuid(entry.remoteIds[index])) return;
+    var mid = memberIdFor(person);
+    if (!mid) return;
+    var day = (entry.dates && entry.dates[index]) || todayISO();
+    window.LakeClub.logKneeboard(window.LAKE_SB, {
+      id: entry.remoteIds[index],
+      memberId: mid,
+      trickName: trickName,
+      mode: mode === "hard" ? "hard" : "easy",
+      loggedAt: kneeboardLoggedAt(day)
+    }).then(afterHostChange).catch(function () {});
+  }
+
+  function hostDropKneeboardEntry(entry) {
+    dropKneeboardIds(entry && entry.remoteIds);
+  }
+
+  function trickNameOf(sport, id) {
+    var item = findItem(sport, id);
+    return (item && item.name) || id;
+  }
+
+  function paintSubmitSet() {
+    var btn = document.getElementById("submit-set-btn");
+    if (!btn) return;
+    btn.disabled = parseBuoys(draftBuoys) == null;
+    paintChartPreview();
+  }
+
+  function paintChartPreview() {
+    var el = document.getElementById("chart-preview");
+    if (!el) return;
+    var n = parseBuoys(draftBuoys);
+    if (n == null) {
+      el.textContent = "Pick a buoy count to see this set’s chart rank.";
+      return;
+    }
+    var p = currentPerson();
+    var pass = normalizePass(p.selectedPass.off, p.selectedPass.mph);
+    var set = { off: pass.off, mph: pass.mph, buoys: n };
+    el.textContent = "This set · Chart " + chartText(set) + " · " + passLabel(set);
+  }
+
   function logSet(buoys) {
     var p = currentPerson();
     if (!canLogFor(p)) {
@@ -1350,7 +1575,10 @@
       return;
     }
     var n = parseBuoys(buoys);
-    if (n == null) return;
+    if (n == null) {
+      showToast("log", "Pick a buoy count first");
+      return;
+    }
     var pass = normalizePass(p.selectedPass.off, p.selectedPass.mph);
     p.selectedPass = pass;
     var row = {
@@ -1365,6 +1593,7 @@
     paintScore();
     renderHistory();
     renderBoards();
+    pushSlalomLog(p, row);
     showToast("log", "Logged " + formatBuoys(n) + " · " + setupShort(pass));
   }
 
@@ -1377,11 +1606,13 @@
     paintScore();
     renderHistory();
     renderBoards();
+    dropSlalomLog(id);
   }
 
   function paintClubChrome() {
     var vis = clubVisible();
     var note = document.getElementById("club-signin-note");
+    var recency = document.getElementById("recency-board");
     var session = document.getElementById("latest-session");
     var club = document.getElementById("club-board");
     var best = document.getElementById("best-board");
@@ -1389,6 +1620,7 @@
     var footer = document.querySelector("footer p");
     var kicker = document.querySelector("#club-board .board-kicker");
     if (note) note.hidden = vis;
+    if (recency) recency.hidden = !vis;
     if (session) session.hidden = !vis;
     if (club) club.hidden = !vis;
     if (best) best.hidden = !vis;
@@ -1396,7 +1628,7 @@
     if (kicker) kicker.textContent = CLUB;
     if (footer) {
       footer.textContent = vis
-        ? "lake.world · " + CLUB + " · sets stay on this device"
+        ? "lake.world · " + CLUB + " · recency is shared"
         : "lake.world · this device only";
     }
     if (window.LakeClubUi && typeof window.LakeClubUi.paint === "function") {
@@ -1484,9 +1716,8 @@
       html += '<li class="board-row' + (you ? " is-you" : "") + '">';
       html += '<div class="session-cols">';
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
-      html += '<span class="board-line">' + escapeHtml(lineLabel(r.set.off)) + "</span>";
-      html += '<span class="board-speed">' + escapeHtml(speedLabel(r.set.mph)) + "</span>";
-      html += '<span class="board-buoys">' + escapeHtml(formatBuoys(r.set.buoys)) + "</span>";
+      html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
+      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -1533,9 +1764,8 @@
       html += '<span class="board-rank">' + (i + 1) + "</span>";
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.set.date)) + "</span>";
-      html += '<span class="board-line">' + escapeHtml(lineLabel(r.set.off)) + "</span>";
-      html += '<span class="board-speed">' + escapeHtml(speedLabel(r.set.mph)) + "</span>";
-      html += '<span class="board-buoys">' + escapeHtml(formatBuoys(r.set.buoys)) + "</span>";
+      html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
+      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -1575,9 +1805,110 @@
       html += '<span class="board-rank">' + (i + 1) + "</span>";
       html += '<span class="board-name">' + escapeHtml(displayName({ name: r.personName })) + "</span>";
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.date)) + "</span>";
-      html += '<span class="board-line">' + escapeHtml(lineLabel(r.off)) + "</span>";
-      html += '<span class="board-speed">' + escapeHtml(speedLabel(r.mph)) + "</span>";
-      html += '<span class="board-buoys">' + escapeHtml(formatBuoys(r.buoys)) + "</span>";
+      html += '<span class="board-pass">' + escapeHtml(passLabel(r)) + "</span>";
+      html += '<span class="board-chart">' + escapeHtml(chartText(r)) + "</span>";
+      html += "</div></li>";
+    }
+    list.innerHTML = html;
+  }
+
+  function recencyName(row) {
+    var n = (row && row.display_name) || "Member";
+    if (row && row.is_junior && n.indexOf("(junior)") === -1) n += " (junior)";
+    return n;
+  }
+
+  function highFiveIcon() {
+    return '<svg class="highfive-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path fill="currentColor" d="M8.1 10.4V6.2a1.35 1.35 0 0 1 2.7 0v4.2h.15V4.7a1.35 1.35 0 1 1 2.7 0v5.6h.15V5.5a1.35 1.35 0 1 1 2.7 0v6h.15V7.6a1.35 1.35 0 1 1 2.7 0V14c0 3.45-2.35 6.15-6.05 6.15-3.25 0-5.8-2.25-5.8-5.55v-1.15H7.2A1.85 1.85 0 0 1 5.35 12V9.3a1.35 1.35 0 0 1 2.7 0v1.1h.05z"/>' +
+      "</svg>";
+  }
+
+  function highFiveLabel(count) {
+    var n = parseInt(count, 10);
+    if (!(n > 0)) return "High five";
+    if (n === 1) return "1 High five";
+    return n + " High fives";
+  }
+
+  function renderRecency() {
+    var list = document.getElementById("recency-list");
+    var empty = document.getElementById("recency-empty");
+    if (!list) return;
+    if (!clubVisible()) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = true;
+      return;
+    }
+    var rows = recencyRows || [];
+    if (!rows.length) {
+      list.innerHTML = "";
+      if (empty) {
+        empty.hidden = false;
+        if (recencyError && /database yet|club_missing|Ask Darin/i.test(recencyError)) {
+          empty.textContent = "Club recency is not on the database yet.";
+        } else {
+          empty.textContent = "No club logs yet.";
+        }
+      }
+      return;
+    }
+    if (empty) empty.hidden = true;
+    var me = myMember();
+    var meId = me && me.id;
+    var cur = currentPerson();
+    var curMember = cur && cur.memberId;
+    var html = "";
+    var i;
+    for (i = 0; i < rows.length; i++) {
+      var row = rows[i] || {};
+      var you = (curMember && row.member_id === curMember) || (meId && row.member_id === meId);
+      var kind = row.kind === "kneeboard" ? "kneeboard" : "slalom";
+      html += '<li class="board-row recency-row' + (you ? " is-you" : "") + '">';
+      html += '<div class="recency-top">';
+      html += '<span class="board-name">' + escapeHtml(recencyName(row)) + "</span>";
+      if (kind === "kneeboard") {
+        html += '<span class="board-date">' + escapeHtml(prettyDateShort(isoDay(row.logged_at))) + "</span>";
+      } else {
+        html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + "</span>";
+      }
+      html += "</div>";
+      html += '<div class="recency-detail">';
+      if (kind === "kneeboard") {
+        html += '<span class="recency-kind">Kneeboard</span>';
+        html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + "</span>";
+        html += '<span class="recency-mode">' + (row.mode === "hard" ? "hard log" : "easy unlock") + "</span>";
+      } else {
+        html += '<span class="recency-kind">Slalom</span>';
+        html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + "</span>";
+        html += '<span class="board-chart">Chart ' + escapeHtml(chartText(row)) + "</span>";
+      }
+      html += "</div>";
+      html += '<div class="recency-social">';
+      html += '<button type="button" class="highfive-btn' + (row.i_high_five ? " is-on" : "") +
+        '" data-act="high-five" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
+        '" aria-pressed="' + (row.i_high_five ? "true" : "false") + '" aria-label="High five">';
+      html += highFiveIcon() + "<span>" + escapeHtml(highFiveLabel(row.high_fives)) + "</span></button>";
+      var comments = Array.isArray(row.comments) ? row.comments : [];
+      if (comments.length) {
+        html += '<ul class="comment-list">';
+        var c;
+        for (c = 0; c < comments.length; c++) {
+          var com = comments[c] || {};
+          html += '<li class="comment-item">';
+          html += '<span class="comment-author">' + escapeHtml(com.display_name || "Member") + "</span>";
+          if (com.mine) {
+            html += '<button type="button" class="comment-delete" data-act="delete-comment" data-id="' +
+              escapeHtml(com.id || "") + '">Delete</button>';
+          }
+          html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
+          html += "</li>";
+        }
+        html += "</ul>";
+      }
+      html += '<form class="comment-form" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") + '">';
+      html += '<input type="text" maxlength="280" placeholder="Comment" aria-label="Comment" required>';
+      html += '<button type="submit">Post</button></form>';
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -1585,6 +1916,7 @@
 
   function renderBoards() {
     paintClubChrome();
+    renderRecency();
     renderSession();
     renderClubBoard();
     renderBest10();
@@ -1618,10 +1950,13 @@
     html = "";
     for (i = 0; i < BUOY_OPTIONS.length; i++) {
       var b = BUOY_OPTIONS[i];
-      html += '<button type="button" class="buoy-btn" data-act="log-buoys" data-n="' + b + '">' +
+      var onB = draftBuoys === b;
+      html += '<button type="button" class="buoy-btn' + (onB ? " is-on" : "") +
+        '" data-act="select-buoys" data-n="' + b + '" aria-pressed="' + (onB ? "true" : "false") + '">' +
         formatBuoys(b) + "</button>";
     }
     document.getElementById("buoy-chips").innerHTML = html;
+    paintSubmitSet();
 
     renderRoster();
     renderHistory();
@@ -1651,9 +1986,8 @@
       html += '<li class="set-row' + (s.id === bestId ? " is-best" : "") + '" data-id="' + escapeHtml(s.id) + '">';
       html += '<div class="set-cols">';
       html += '<span class="set-date">' + escapeHtml(prettyDate(s.date)) + "</span>";
-      html += '<span class="set-line">' + escapeHtml(lineLabel(s.off)) + "</span>";
-      html += '<span class="set-speed">' + escapeHtml(speedLabel(s.mph)) + "</span>";
-      html += '<span class="set-buoys">' + escapeHtml(formatBuoys(s.buoys)) + "</span>";
+      html += '<span class="board-pass">' + escapeHtml(passLabel(s)) + "</span>";
+      html += '<span class="board-chart">' + escapeHtml(chartText(s)) + "</span>";
       html += "</div>";
       html += '<button type="button" class="set-delete" data-act="delete-set" data-id="' +
         escapeHtml(s.id) + '">Delete set</button>';
@@ -1788,8 +2122,11 @@
       var entry = ensureEntry(sport, id);
       if (el.checked) {
         if (!isLanded(entry)) landNow(entry);
+        hostPushKneeboardNew(currentPerson(), entry, 0, trickNameOf(sport, id), modeOf(sport, id));
       } else {
+        hostDropKneeboardEntry(entry);
         clearLand(entry);
+        entry.remoteIds = [];
       }
       afterProgress();
       renderSport(sport);
@@ -1804,6 +2141,7 @@
       else entryF.dates[0] = el.value;
       syncCount(entryF);
       afterProgress();
+      hostUpdateKneeboard(currentPerson(), entryF, 0, trickNameOf(sport, id), modeOf(sport, id));
       return;
     }
 
@@ -1813,6 +2151,7 @@
       if (!el.value || isNaN(idx) || !entryL.dates[idx]) return;
       entryL.dates[idx] = el.value;
       afterProgress();
+      hostUpdateKneeboard(currentPerson(), entryL, idx, trickNameOf(sport, id), modeOf(sport, id));
       return;
     }
 
@@ -1850,12 +2189,41 @@
       setSelectedPass(currentPerson().selectedPass.off, btn.getAttribute("data-mph"));
       return;
     }
-    if (act === "log-buoys") {
-      logSet(btn.getAttribute("data-n"));
+    if (act === "select-buoys") {
+      draftBuoys = parseBuoys(btn.getAttribute("data-n"));
+      renderSlalom();
+      return;
+    }
+    if (act === "submit-set") {
+      logSet(draftBuoys);
       return;
     }
     if (act === "delete-set") {
       deleteSet(btn.getAttribute("data-id"));
+      return;
+    }
+    if (act === "high-five") {
+      if (!hostEnabled() || !window.LakeClub.toggleHighFive) return;
+      window.LakeClub.toggleHighFive(window.LAKE_SB, btn.getAttribute("data-kind"), btn.getAttribute("data-id"))
+        .then(function (res) {
+          if (res && res.ok === false) {
+            showToast("log", res.error || "Could not High five.");
+            return;
+          }
+          loadRecency();
+        }).catch(function () {});
+      return;
+    }
+    if (act === "delete-comment") {
+      if (!hostEnabled() || !window.LakeClub.deleteComment) return;
+      window.LakeClub.deleteComment(window.LAKE_SB, btn.getAttribute("data-id"))
+        .then(function (res) {
+          if (res && res.ok === false) {
+            showToast("log", res.error || "Could not delete that comment.");
+            return;
+          }
+          loadRecency();
+        }).catch(function () {});
       return;
     }
 
@@ -1877,17 +2245,28 @@
       var item = findItem(sport, id);
       if (item && item.custom) item.mode = entry.mode;
       afterProgress();
+      if (entry.remoteIds) {
+        var mi;
+        for (mi = 0; mi < entry.remoteIds.length; mi++) {
+          hostUpdateKneeboard(currentPerson(), entry, mi, trickNameOf(sport, id), entry.mode);
+        }
+      }
       renderSport(sport);
       return;
     }
 
     if (act === "log-again") {
       var entryA = ensureEntry(sport, id);
-      if (!isLanded(entryA)) landNow(entryA);
-      else {
+      var idxA;
+      if (!isLanded(entryA)) {
+        landNow(entryA);
+        idxA = 0;
+      } else {
         entryA.dates.push(todayISO());
         syncCount(entryA);
+        idxA = entryA.dates.length - 1;
       }
+      hostPushKneeboardNew(currentPerson(), entryA, idxA, trickNameOf(sport, id), modeOf(sport, id));
       afterProgress();
       renderSport(sport);
       return;
@@ -1897,8 +2276,11 @@
       var entryD = ensureEntry(sport, id);
       var dropIdx = parseInt(btn.getAttribute("data-index"), 10);
       if (isNaN(dropIdx) || dropIdx <= 0) return;
+      var dropId = entryD.remoteIds && entryD.remoteIds[dropIdx];
       entryD.dates.splice(dropIdx, 1);
+      if (entryD.remoteIds) entryD.remoteIds.splice(dropIdx, 1);
       syncCount(entryD);
+      if (dropId) dropKneeboardIds([dropId]);
       afterProgress();
       renderSport(sport);
       return;
@@ -1906,6 +2288,7 @@
 
     if (act === "remove") {
       var p = currentPerson();
+      hostDropKneeboardEntry(getEntry(sport, id));
       p.sports[sport].customs = p.sports[sport].customs.filter(function (c) {
         return c.id !== id;
       });
@@ -1947,11 +2330,34 @@
       var entry = ensureEntry(sport, custom.id);
       entry.mode = mode;
       landNow(entry);
+      hostPushKneeboardNew(currentPerson(), entry, 0, name, mode);
       afterProgress();
       field.value = "";
       if (hardBox) hardBox.checked = false;
       renderSport(sport);
       field.focus();
+    });
+  }
+
+  var recencyList = document.getElementById("recency-list");
+  if (recencyList && !recencyList.getAttribute("data-bound")) {
+    recencyList.setAttribute("data-bound", "1");
+    recencyList.addEventListener("submit", function (e) {
+      var form = e.target && e.target.closest ? e.target.closest(".comment-form") : null;
+      if (!form) return;
+      e.preventDefault();
+      if (!hostEnabled() || !window.LakeClub.addComment) return;
+      var field = form.querySelector("input");
+      var body = field ? field.value : "";
+      window.LakeClub.addComment(window.LAKE_SB, form.getAttribute("data-kind"), form.getAttribute("data-id"), body)
+        .then(function (res) {
+          if (res && res.ok === false) {
+            showToast("log", res.error || "Could not post that comment.");
+            return;
+          }
+          if (field) field.value = "";
+          loadRecency();
+        }).catch(function () {});
     });
   }
 
@@ -1963,6 +2369,7 @@
   paintUnits();
   paintScore();
   paintShelf();
+  loadRecency();
   openMediaDb(function () {
     fillAllMedia();
     scanAnyMedia(function (found) {
