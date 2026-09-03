@@ -1558,3 +1558,17 @@ input:focus-visible {
 .settings-section .chip-label { margin-top: 0; }
 .settings-section.club-tools { margin-bottom: 0; }
 body.settings-open { overflow: hidden; }
+
+.faq-q {
+  margin: 0.7rem 0 0.25rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+.faq-q:first-of-type { margin-top: 0.45rem; }
+.faq-a {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--mute);
+  line-height: 1.4;
+}

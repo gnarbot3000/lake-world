@@ -55,7 +55,7 @@ Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitte
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there.
 
-Slalom tab order: line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header. A **settings gear** in the header opens mph/kph and (for approved members) invite-someone; more settings can go there later.
+Slalom tab order: line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header. A **settings gear** in the header opens mph/kph, a short slalom FAQ (how to log a set and Chart rank), and (for approved members) invite-someone.
 
 ## Slalom — best of the set
 
