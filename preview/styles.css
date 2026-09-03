@@ -1221,7 +1221,10 @@ input:focus-visible {
   align-items: center;
   gap: 0.28rem;
 }
-.recency-name-wrap .board-name { flex: 1; }
+.recency-name-wrap .board-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
 .recency-sport-icon {
   flex: 0 0 auto;
   width: 14px;

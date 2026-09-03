@@ -17,7 +17,8 @@
   }
 
   function displayNameOnly(row) {
-    return (row && row.display_name) || "Member";
+    var name = (row && row.display_name) || "Member";
+    return String(name).replace(/\s*\(junior\)\s*$/i, "");
   }
 
   function recencyName(row) {
@@ -306,8 +307,9 @@
     var comments = Array.isArray(row.comments) ? row.comments : [];
     var isOpen = !!this.open[key(kind, row.id)];
     var html = '<li class="board-row recency-row is-' + kind + '"><div class="recency-top">';
-    html += '<span class="recency-name-wrap">' + sportIcon(kind) +
-      '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span></span>';
+    html += '<span class="recency-name-wrap">' +
+      '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span>' +
+      sportIcon(kind) + '</span>';
     html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + '</span></div>';
     html += '<div class="recency-detail"><div class="recency-facts">';
     if (kind === "kneeboard") html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + '</span>';
