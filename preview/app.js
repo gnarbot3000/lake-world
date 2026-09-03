@@ -2097,19 +2097,47 @@
     });
   }
 
-  document.querySelector(".masthead").addEventListener("click", function (e) {
-    var btn = e.target.closest("button");
-    if (!btn) return;
-    if (btn.getAttribute("data-act") === "units") {
-      var u = btn.getAttribute("data-units");
-      if (u !== "mph" && u !== "kph") return;
-      state.units = u;
-      save(state);
-      paintUnits();
-      paintScore();
-      renderSlalom();
-    }
+  function setSettingsOpen(open) {
+    var panel = document.getElementById("settings-panel");
+    var scrim = document.getElementById("settings-scrim");
+    var gear = document.getElementById("settings-btn");
+    if (panel) panel.hidden = !open;
+    if (scrim) scrim.hidden = !open;
+    if (gear) gear.setAttribute("aria-expanded", open ? "true" : "false");
+    document.body.classList.toggle("settings-open", !!open);
+  }
+
+  var settingsBtn = document.getElementById("settings-btn");
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", function () {
+      var panel = document.getElementById("settings-panel");
+      setSettingsOpen(panel ? panel.hidden : true);
+    });
+  }
+  var settingsClose = document.getElementById("settings-close");
+  if (settingsClose) settingsClose.addEventListener("click", function () { setSettingsOpen(false); });
+  var settingsScrim = document.getElementById("settings-scrim");
+  if (settingsScrim) settingsScrim.addEventListener("click", function () { setSettingsOpen(false); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") setSettingsOpen(false);
   });
+
+  var settingsPanel = document.getElementById("settings-panel");
+  if (settingsPanel) {
+    settingsPanel.addEventListener("click", function (e) {
+      var btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.getAttribute("data-act") === "units") {
+        var u = btn.getAttribute("data-units");
+        if (u !== "mph" && u !== "kph") return;
+        state.units = u;
+        save(state);
+        paintUnits();
+        paintScore();
+        renderSlalom();
+      }
+    });
+  }
 
   document.querySelector("main").addEventListener("change", function (e) {
     var el = e.target;

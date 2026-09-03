@@ -55,7 +55,7 @@ Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitte
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there.
 
-Slalom tab order: invite tools (approved members) → line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header.
+Slalom tab order: line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → best 10 → this skier’s sets. The member dropdown lives in the header. A **settings gear** in the header opens mph/kph and (for approved members) invite-someone; more settings can go there later.
 
 ## Slalom — best of the set
 
@@ -67,7 +67,7 @@ Pick **line length**, **boat speed**, and buoy count (**1 through 6 in halves**)
 
 There is no working-range window, no bump-up after a 6, and **no ZBS**.
 
-**Units** (`mph` | `kph`) live in the sticky header and are **club-wide**, not per skier. Default is **mph** (Cleveland club). Internally every set is stored canonical `{ off, mph }`. Labels follow IWWF pairing:
+**Units** (`mph` | `kph`) live in **Settings** and are **club-wide**, not per skier. Default is **mph** (Cleveland club). Internally every set is stored canonical `{ off, mph }`. Labels follow IWWF pairing:
 
 | Off (stored) | Imperial | Metric |
 | --- | --- | --- |
