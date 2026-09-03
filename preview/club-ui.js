@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var clubsLoaded = false;
+
   function $(id) {
     return document.getElementById(id);
   }
@@ -35,21 +37,36 @@
     setTimeout(function () { el.classList.remove("is-on"); }, 2400);
   }
 
-  function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise(function (resolve, reject) {
-      try {
-        var field = $("invite-link-field");
-        if (!field) throw new Error("no field");
-        field.value = text;
-        field.select();
-        document.execCommand("copy");
-        resolve();
-      } catch (err) {
-        reject(err);
+  function showJoinError(msg) {
+    var el = $("join-error");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.hidden = !msg;
+  }
+
+  function fillClubs() {
+    var sel = $("join-club");
+    if (!sel || clubsLoaded) return;
+    var sb = window.LAKE_SB;
+    if (!sb || !window.LakeClub || typeof window.LakeClub.listClubs !== "function") return;
+    window.LakeClub.listClubs(sb).then(function (res) {
+      if (!res || res.ok === false) {
+        showJoinError((res && res.error) || "Could not load clubs.");
+        return;
       }
+      var clubs = res.clubs || [];
+      sel.innerHTML = "";
+      var i;
+      for (i = 0; i < clubs.length; i++) {
+        var opt = document.createElement("option");
+        opt.value = clubs[i].id;
+        opt.textContent = clubs[i].name;
+        sel.appendChild(opt);
+      }
+      clubsLoaded = true;
+      if (!clubs.length) showJoinError("No clubs to join yet.");
+    }).catch(function (err) {
+      showJoinError((err && err.message) || "Could not load clubs.");
     });
   }
 
@@ -57,15 +74,25 @@
     var c = club();
     var signedIn = !!(window.LAKE_USER_ID);
     var pending = $("pending-gate");
+    var joinGate = $("join-gate");
     var inviteOnly = $("invite-only-note");
     var denied = $("denied-gate");
     var note = $("club-signin-note");
     if (pending) pending.hidden = !(signedIn && c.status === "pending");
     if (denied) denied.hidden = !(signedIn && c.status === "denied");
-    if (inviteOnly) inviteOnly.hidden = !(signedIn && c.status === "none");
+    if (joinGate) {
+      joinGate.hidden = !(signedIn && c.status === "none");
+      if (!joinGate.hidden) fillClubs();
+    }
+    if (inviteOnly) inviteOnly.hidden = true;
     if (note) note.hidden = signedIn || c.status === "approved";
     var adminLink = $("mast-admin-link");
     if (adminLink) adminLink.hidden = !(c.status === "approved");
+    var pendingCopy = pending && pending.querySelector(".legend");
+    if (pendingCopy && c.clubName) {
+      pendingCopy.textContent = "You are signed in. An admin of " + c.clubName +
+        " still has to approve you before you can see the club roster.";
+    }
     var consumeErr = $("consume-error");
     if (consumeErr) {
       if (c.consumeError) {
@@ -132,64 +159,103 @@
     }
   }
 
-  function selectedJunior() {
-    var radios = document.querySelectorAll("#create-invite-form input[name='invite-kind']");
-    var i;
-    for (i = 0; i < radios.length; i++) {
-      if (radios[i].checked) return radios[i].value === "junior";
+  function paintClubSwitch() {
+    var sel = $("club-select");
+    if (!sel) return;
+    var c = club();
+    var clubs = c.myClubs || [];
+    if (clubs.length < 2) {
+      sel.hidden = true;
+      return;
     }
-    return false;
-  }
-
-  function showCreatedLink(token) {
-    var row = $("invite-link-row");
-    var field = $("invite-link-field");
-    if (!row || !field || !window.LakeClub) return;
-    field.value = window.LakeClub.inviteUrl(token);
-    row.hidden = false;
-    field.focus();
-    field.select();
+    var html = "";
+    var i;
+    for (i = 0; i < clubs.length; i++) {
+      var row = clubs[i];
+      html += '<option value="' + escapeHtml(row.id) + '"';
+      if (row.id === c.clubId) html += " selected";
+      html += ">" + escapeHtml(row.name || "Club") + "</option>";
+    }
+    sel.innerHTML = html;
+    sel.hidden = false;
   }
 
   function bind() {
-    var form = $("create-invite-form");
-    if (form && !form.getAttribute("data-bound")) {
-      form.setAttribute("data-bound", "1");
-      form.addEventListener("submit", function (e) {
+    var joinForm = $("join-club-form");
+    if (joinForm && !joinForm.getAttribute("data-bound")) {
+      joinForm.setAttribute("data-bound", "1");
+      joinForm.addEventListener("submit", function (e) {
         e.preventDefault();
         var sb = window.LAKE_SB;
         if (!sb || !window.LakeClub) return;
-        var nameEl = $("invite-name");
+        var nameEl = $("join-name");
+        var clubEl = $("join-club");
         var name = nameEl ? nameEl.value : "";
-        window.LakeClub.createInvite(sb, name, selectedJunior()).then(function (res) {
+        var clubId = clubEl ? clubEl.value : "";
+        showJoinError("");
+        if (!clubId) {
+          showJoinError("Pick a club.");
+          return;
+        }
+        window.LakeClub.requestJoin(sb, clubId, name).then(function (res) {
           if (!res || res.ok === false) {
-            toast((res && res.error) || "Could not create the invite.");
+            showJoinError((res && res.error) || "Could not request to join.");
             return;
           }
-          if (nameEl) nameEl.value = "";
-          showCreatedLink(res.token);
-          toast("Invite link ready — copy it and send it yourself.");
+          if (res.club_id && window.LakeClub.selectClub) {
+            return window.LakeClub.selectClub(sb, res.club_id).then(function (next) {
+              window.LAKE_CLUB = next;
+              paint();
+            });
+          }
           return window.LakeClub.refresh(sb).then(function (next) {
             window.LAKE_CLUB = next;
             paint();
           });
         }).catch(function (err) {
-          toast((err && err.message) || "Could not create the invite.");
+          showJoinError((err && err.message) || "Could not request to join.");
         });
       });
     }
 
-    var copyBtn = $("copy-invite-btn");
-    if (copyBtn && !copyBtn.getAttribute("data-bound")) {
-      copyBtn.setAttribute("data-bound", "1");
-      copyBtn.addEventListener("click", function () {
-        var field = $("invite-link-field");
-        if (!field || !field.value) return;
-        copyText(field.value).then(function () {
-          copyBtn.textContent = "Copied";
-          setTimeout(function () { copyBtn.textContent = "Copy link"; }, 1600);
+    var juniorForm = $("add-junior-form");
+    if (juniorForm && !juniorForm.getAttribute("data-bound")) {
+      juniorForm.setAttribute("data-bound", "1");
+      juniorForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var sb = window.LAKE_SB;
+        if (!sb || !window.LakeClub) return;
+        var nameEl = $("junior-name");
+        var name = nameEl ? nameEl.value : "";
+        window.LakeClub.addJunior(sb, name).then(function (res) {
+          if (!res || res.ok === false) {
+            toast((res && res.error) || "Could not add the junior.");
+            return;
+          }
+          if (nameEl) nameEl.value = "";
+          toast("Junior added — waiting for admin approval.");
+          return window.LakeClub.refresh(sb).then(function (next) {
+            window.LAKE_CLUB = next;
+            paint();
+          });
+        }).catch(function (err) {
+          toast((err && err.message) || "Could not add the junior.");
+        });
+      });
+    }
+
+    var clubSel = $("club-select");
+    if (clubSel && !clubSel.getAttribute("data-bound")) {
+      clubSel.setAttribute("data-bound", "1");
+      clubSel.addEventListener("change", function () {
+        var sb = window.LAKE_SB;
+        if (!sb || !window.LakeClub || !clubSel.value) return;
+        window.LakeClub.selectClub(sb, clubSel.value).then(function (next) {
+          window.LAKE_CLUB = next;
+          paint();
+          location.reload();
         }).catch(function () {
-          field.select();
+          location.reload();
         });
       });
     }
@@ -199,6 +265,7 @@
     paintGates();
     paintClubTools();
     paintRosterNames();
+    paintClubSwitch();
   }
 
   bind();

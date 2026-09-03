@@ -1421,6 +1421,8 @@ input:focus-visible {
 .gate-card .btn-ghost { margin-top: 0.45rem; }
 .gate-card input[type="email"],
 .gate-card input[type="password"],
+.gate-card input[type="text"],
+.gate-card select,
 .invite-link-box input[type="text"] {
   width: 100%;
   font: inherit;
@@ -1442,7 +1444,9 @@ input:focus-visible {
 .club-error[hidden],
 #pending-gate[hidden],
 #denied-gate[hidden],
+#join-gate[hidden],
 #invite-only-note[hidden],
+#join-error[hidden],
 #club-tools[hidden],
 #admin-app[hidden],
 #admin-gate[hidden],
@@ -1649,3 +1653,22 @@ body.settings-open { overflow: hidden; }
 .kb-search { margin: 0.85rem 1rem 0; }
 .kb-search .add-row { margin-top: 0.35rem; }
 .kb-search .btn-primary { width: auto; padding: 0 1rem; }
+
+#join-error {
+  margin: 0.55rem 0 0;
+}
+
+#club-select {
+  max-width: 11.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 0.55rem;
+  cursor: pointer;
+}
+#club-select[hidden] { display: none; }

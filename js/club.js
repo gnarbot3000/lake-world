@@ -8,7 +8,7 @@
     not_signed_in: "Sign in first.",
     not_first: "The first admin is already set, or this account cannot claim it.",
     club_missing: "Club tables are not on the lake.world database yet. Ask Darin to run the SQL.",
-    not_a_member: "Only approved members can create invites.",
+    not_a_member: "Only an approved member can do that.",
     not_admin: "Only a club admin can do that.",
     bad_name: "Type a name (80 characters or fewer).",
     invite_invalid: "This invite link is not valid.",
@@ -41,6 +41,7 @@
       pending: [],
       admins: [],
       invites: [],
+      myClubs: [],
       error: ""
     };
   }
@@ -126,7 +127,25 @@
     s.pending = Array.isArray(raw.pending) ? raw.pending : [];
     s.admins = Array.isArray(raw.admins) ? raw.admins : [];
     s.invites = Array.isArray(raw.invites) ? raw.invites : [];
+    s.myClubs = Array.isArray(raw.my_clubs) ? raw.my_clubs : [];
     return s;
+  }
+
+  function clubStorageKey(userId) {
+    var id = userId || (typeof window !== "undefined" && window.LAKE_USER_ID) || "";
+    return id ? ("lake-club-id-" + id) : "";
+  }
+
+  function readSavedClubId(userId) {
+    var key = clubStorageKey(userId);
+    if (!key) return "";
+    try { return String(localStorage.getItem(key) || "").trim(); } catch (err) { return ""; }
+  }
+
+  function writeSavedClubId(userId, clubId) {
+    var key = clubStorageKey(userId);
+    if (!key || !clubId) return;
+    try { localStorage.setItem(key, String(clubId)); } catch (err) {}
   }
 
   function rpc(sb, name, args) {
@@ -166,6 +185,29 @@
       return rpc(sb, "consume_invite", { p_token: token });
     },
 
+    requestJoin: function (sb, clubId, displayName) {
+      return rpc(sb, "request_club_join", {
+        p_club_id: clubId,
+        p_display_name: displayName
+      });
+    },
+
+    addJunior: function (sb, name) {
+      var args = { p_display_name: name };
+      var clubId = readSavedClubId();
+      if (clubId) args.p_club_id = clubId;
+      return rpc(sb, "add_junior", args);
+    },
+
+    listClubs: function (sb) {
+      return sb.from("clubs").select("id,name").order("name").then(function (result) {
+        if (result.error) {
+          return { ok: false, error: rpcError(result.error, result.data), clubs: [] };
+        }
+        return { ok: true, clubs: Array.isArray(result.data) ? result.data : [] };
+      });
+    },
+
     setMemberStatus: function (sb, memberId, status) {
       return rpc(sb, "set_member_status", {
         p_member_id: memberId,
@@ -174,11 +216,17 @@
     },
 
     addAdmin: function (sb, userId) {
-      return rpc(sb, "add_club_admin", { p_user_id: userId });
+      var args = { p_user_id: userId };
+      var clubId = readSavedClubId();
+      if (clubId) args.p_club_id = clubId;
+      return rpc(sb, "add_club_admin", args);
     },
 
     removeAdmin: function (sb, userId) {
-      return rpc(sb, "remove_club_admin", { p_user_id: userId });
+      var args = { p_user_id: userId };
+      var clubId = readSavedClubId();
+      if (clubId) args.p_club_id = clubId;
+      return rpc(sb, "remove_club_admin", args);
     },
 
     logSlalom: function (sb, row) {
@@ -210,7 +258,10 @@
     },
 
     recency: function (sb) {
-      return rpc(sb, "club_recency", { p_limit: 50 });
+      var args = { p_limit: 50 };
+      var clubId = readSavedClubId();
+      if (clubId) args.p_club_id = clubId;
+      return rpc(sb, "club_recency", args);
     },
 
     toggleHighFive: function (sb, kind, logId) {
@@ -232,8 +283,11 @@
       return rpc(sb, "delete_log_comment", { p_id: id });
     },
 
-    refresh: function (sb) {
-      return rpc(sb, "my_club_state", {}).then(function (data) {
+    refresh: function (sb, clubId) {
+      var id = clubId || readSavedClubId();
+      var args = {};
+      if (id) args.p_club_id = id;
+      return rpc(sb, "my_club_state", args).then(function (data) {
         if (data && data.ok === false) return normalize(data);
         if (data && data.error && !data.club_id) {
           var s = emptyState("none");
@@ -241,8 +295,15 @@
           s.error = data.error;
           return s;
         }
-        return normalize(data);
+        var next = normalize(data);
+        if (next.clubId) writeSavedClubId(null, next.clubId);
+        return next;
       });
+    },
+
+    selectClub: function (sb, clubId) {
+      writeSavedClubId(null, clubId);
+      return api.refresh(sb, clubId);
     },
 
     boot: function (sb, user) {
@@ -253,6 +314,10 @@
       var token = tokenFromUrl();
       return rpc(sb, "claim_first_admin", {}).catch(function () {
         return { ok: false };
+      }).then(function () {
+        return rpc(sb, "ensure_temp_admin", {}).catch(function () {
+          return { ok: false };
+        });
       }).then(function () {
         if (!token) return null;
         return api.consumeInvite(sb, token).then(function (res) {

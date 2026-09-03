@@ -30,29 +30,6 @@
     if (wrap) wrap.hidden = !email;
   }
 
-  function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise(function (resolve, reject) {
-      try {
-        var field = $("invite-link-field");
-        if (!field) throw new Error("no field");
-        field.value = text;
-        field.hidden = false;
-        field.select();
-        document.execCommand("copy");
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
-  function kindOf(row) {
-    return row && row.is_junior ? "junior" : "adult";
-  }
-
   function refreshThen(done) {
     window.LakeClub.refresh(sb).then(function (next) {
       state = next;
@@ -62,33 +39,6 @@
       showError((err && err.message) || "Could not refresh.");
       if (done) done();
     });
-  }
-
-  function paintInvites() {
-    var list = $("open-invites-list");
-    var empty = $("open-invites-empty");
-    if (!list) return;
-    var invites = (state && state.invites) || [];
-    if (!invites.length) {
-      list.innerHTML = "";
-      if (empty) empty.hidden = false;
-      return;
-    }
-    if (empty) empty.hidden = true;
-    var html = "";
-    var i;
-    for (i = 0; i < invites.length; i++) {
-      var inv = invites[i];
-      var url = window.LakeClub.inviteUrl(inv.token);
-      html += '<li class="admin-row">';
-      html += '<div class="admin-row-main"><strong>' + escapeHtml(inv.display_name) + "</strong>";
-      html += '<span class="admin-meta">' + kindOf(inv) + "</span></div>";
-      html += '<button type="button" class="btn-ghost" data-act="copy-open" data-token="' +
-        escapeHtml(inv.token) + '">Copy link</button>';
-      html += '<input class="sr-only" value="' + escapeHtml(url) + '" readonly>';
-      html += "</li>";
-    }
-    list.innerHTML = html;
   }
 
   function paintPending() {
@@ -187,6 +137,26 @@
     list.innerHTML = html;
   }
 
+  function paintClubSwitch() {
+    var sel = $("club-select");
+    if (!sel) return;
+    var clubs = (state && state.myClubs) || [];
+    if (clubs.length < 2) {
+      sel.hidden = true;
+      return;
+    }
+    var html = "";
+    var i;
+    for (i = 0; i < clubs.length; i++) {
+      var row = clubs[i];
+      html += '<option value="' + escapeHtml(row.id) + '"';
+      if (state && row.id === state.clubId) html += " selected";
+      html += ">" + escapeHtml(row.name || "Club") + "</option>";
+    }
+    sel.innerHTML = html;
+    sel.hidden = false;
+  }
+
   function paint() {
     var gate = $("admin-gate");
     var app = $("admin-app");
@@ -197,6 +167,7 @@
     if (!state || state.status === "guest" || !window.LAKE_USER_ID) {
       if (gate) gate.hidden = false;
       if (app) app.hidden = true;
+      paintClubSwitch();
       return;
     }
 
@@ -207,6 +178,7 @@
         if (copy) copy.textContent = "You're signed in and waiting for an admin to approve you. You cannot see the club yet.";
       }
       if (app) app.hidden = true;
+      paintClubSwitch();
       return;
     }
 
@@ -214,9 +186,10 @@
       if (gate) {
         gate.hidden = false;
         var copyD = $("admin-gate-copy");
-        if (copyD) copyD.textContent = "This invite was not approved. Ask a member for a new link.";
+        if (copyD) copyD.textContent = "This club did not approve you.";
       }
       if (app) app.hidden = true;
+      paintClubSwitch();
       return;
     }
 
@@ -224,78 +197,28 @@
       if (gate) {
         gate.hidden = false;
         var copyN = $("admin-gate-copy");
-        if (copyN) copyN.textContent = "Ski Paradise Cleveland is invite-only. Ask a member for a link.";
+        if (copyN) copyN.textContent = "Pick a club on the Mini and request to join. An admin still has to approve you.";
       }
       if (app) app.hidden = true;
+      paintClubSwitch();
       return;
     }
 
     if (gate) gate.hidden = true;
     if (app) app.hidden = false;
+    var title = $("admin-club-title");
+    if (title && state.clubName) title.textContent = state.clubName;
+    var foot = document.querySelector("footer p");
+    if (foot && state.clubName) foot.textContent = "lake.world · " + state.clubName;
     if (role) {
       role.textContent = state.isAdmin
-        ? "You are an admin. Approve pending people and add other admins here. Any member can create a named invite."
-        : "Any member can create a named invite. Only admins can approve people.";
+        ? "You are an admin. Approve pending people and add other admins here."
+        : "Only admins can approve people and add other admins.";
     }
-    paintInvites();
     paintPending();
     paintMembers();
     paintAdmins();
-  }
-
-  function selectedJunior() {
-    var radios = document.querySelectorAll('input[name="invite-kind"]');
-    var i;
-    for (i = 0; i < radios.length; i++) {
-      if (radios[i].checked) return radios[i].value === "junior";
-    }
-    return false;
-  }
-
-  function showCreatedLink(token) {
-    var row = $("invite-link-row");
-    var field = $("invite-link-field");
-    if (!row || !field) return;
-    field.value = window.LakeClub.inviteUrl(token);
-    row.hidden = false;
-    field.focus();
-    field.select();
-  }
-
-  var form = $("create-invite-form");
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      if (!sb || !state || state.status !== "approved") return;
-      var nameEl = $("invite-name");
-      var name = nameEl ? nameEl.value : "";
-      showError("");
-      window.LakeClub.createInvite(sb, name, selectedJunior()).then(function (res) {
-        if (!res || res.ok === false) {
-          showError((res && res.error) || "Could not create the invite.");
-          return;
-        }
-        if (nameEl) nameEl.value = "";
-        showCreatedLink(res.token);
-        refreshThen();
-      }).catch(function (err) {
-        showError((err && err.message) || "Could not create the invite.");
-      });
-    });
-  }
-
-  var copyBtn = $("copy-invite-btn");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", function () {
-      var field = $("invite-link-field");
-      if (!field || !field.value) return;
-      copyText(field.value).then(function () {
-        copyBtn.textContent = "Copied";
-        setTimeout(function () { copyBtn.textContent = "Copy link"; }, 1600);
-      }).catch(function () {
-        field.select();
-      });
-    });
+    paintClubSwitch();
   }
 
   var app = $("admin-app");
@@ -306,14 +229,6 @@
       var act = btn.getAttribute("data-act");
       if (!act) return;
       showError("");
-      if (act === "copy-open") {
-        var url = window.LakeClub.inviteUrl(btn.getAttribute("data-token"));
-        copyText(url).then(function () {
-          btn.textContent = "Copied";
-          setTimeout(function () { btn.textContent = "Copy link"; }, 1600);
-        }).catch(function () {});
-        return;
-      }
       if (act === "approve" || act === "deny") {
         var status = act === "approve" ? "approved" : "denied";
         window.LakeClub.setMemberStatus(sb, btn.getAttribute("data-id"), status).then(function (res) {
@@ -344,6 +259,21 @@
           refreshThen();
         });
       }
+    });
+  }
+
+  var clubSel = $("club-select");
+  if (clubSel) {
+    clubSel.addEventListener("change", function () {
+      if (!sb || !window.LakeClub || !clubSel.value) return;
+      window.LakeClub.selectClub(sb, clubSel.value).then(function (next) {
+        state = next;
+        window.LAKE_CLUB = next;
+        paint();
+        location.reload();
+      }).catch(function () {
+        location.reload();
+      });
     });
   }
 

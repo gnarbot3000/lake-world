@@ -105,7 +105,13 @@
         goPreview();
         return;
       }
-      showError("Account created. Sign In.", true);
+      return sb.auth.signInWithPassword({ email: creds.email, password: creds.password }).then(function (signed) {
+        if (signed.error) {
+          showError("Account created. Sign In.", true);
+          return;
+        }
+        goPreview();
+      });
     }).catch(function (err) {
       showError((err && err.message) || "Could not create the account.");
     }).then(function () {
@@ -127,11 +133,6 @@
     } catch (err) {
       sb = null;
     }
-  }
-
-  if (inviteQuery()) {
-    var hero = document.querySelector(".hero p");
-    if (hero) hero.textContent = "You have a Ski Paradise Cleveland invite. Sign in or create an account.";
   }
 
   if (sb) {

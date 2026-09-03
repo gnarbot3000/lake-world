@@ -2,7 +2,7 @@
 
 Product brand: **lake.world** (not “Lake World”). Category: watersports. Local-first logbook for **slalom skiing** (main, best run of a set) and **kneeboarding** (secondary tricks). Self-report only. Splash Sign In is optional; Preview still works as a guest.
 
-Club is hardcoded: **Ski Paradise Cleveland** (first / only club). No public create-a-club. Membership is **invite + admin approval** in lake.world Supabase. Guest Preview is personal-only. A signed-in **approved** member namespaces the local save and unlocks the club roster. Pending users see a waiting screen, not the roster.
+Clubs: **Ski Paradise Cleveland**, **Adams Lake**, **Ski Pond**. No public create-a-club. Membership is **email join + pick a club + admin approve** in lake.world Supabase. Guest Preview is personal-only. A signed-in **approved** member namespaces the local save and unlocks that club's roster. If they belong to more than one club they can switch this session (header select; last club id in localStorage keyed by user). Pending users see a waiting screen, not the roster. Invite copy-links are leftover (old tokens still work) and are not the join path.
 
 Look: light outdoor dock log for noon on the water — UDisc/Hevy-inspired, high-contrast. Not a dark night-lake theme.
 
@@ -25,21 +25,23 @@ The Mini opens on **Slalom**. Kneeboard is the second tab. Switching skiers swit
 Home is a hive feed, not a giant easy/hard list. Working range is inferred from what you landed lately (seed difficulties 1–10). Show **3 landed near your band** and **3 to try** at that same band. Search to log something not in those six (catalog match lands it; otherwise a write-in at your current band). Cold start uses band 3 (surface tricks). Check a trick to land it. Guest Preview stays personal-only. Hive-adjusted club difficulty can come later.
 
 
-## Club roster (invite-only)
+## Club roster (email join)
 
 Who is skiing is a **dropdown** in the header. Approved members log **their own** slalom/kneeboard sets and **their juniors’** sets only — not other adults. Names sort last, then first. Logging a set with no name toasts **Add a name to hit the board**. There is no email auto-match onto a hardcoded roster.
 
-**Invites:** any approved member types a name (adult or junior), copies a one-time link, and sends it however they want. lake.world does not email invites. The invitee signs in / creates an account via `invite.html?token=` (also `preview/index.html?invite=` and `/?invite=`). They then sit **pending** until an admin approves. Pending signed-in users must not see the club roster.
+**Join:** create an account on the splash with email + password (auto-confirm, no email verification). Signed-in users with no membership pick a club from `public.clubs` (Ski Paradise Cleveland, Adams Lake, Ski Pond), enter a display name, and tap **Request to join**. That creates a pending adult member. An admin approves or denies on `preview/admin.html`. Later logins use that member row’s club (`my_club_state(p_club_id)`: saved club if they belong, else approved then pending then denied). Pending signed-in users must not see the club roster.
 
-**Juniors** also need an invite. A parent accepts while signed in. The junior stays pending until admin approval and is tied to that parent. After approval they show in that parent’s dropdown as `Owen Hageman (junior)`.
+**Juniors** have no email. An approved member adds a junior in Settings (name only). The junior is pending, tied to that parent, until an admin approves. After approval they show in that parent’s dropdown as `Owen Hageman (junior)`. Do not require the junior to click a link.
 
-**First admin:** when `joel.hageman@gmail.com` signs in and the club has no admins yet, that account becomes the first admin and an approved member named Joel Hageman. He adds other admins in `preview/admin.html`. Do not hardcode extra admin emails. Non-admin members can create named invites; they cannot approve.
+**Temporary admin:** `joel.hageman@gmail.com` is admin and an approved member named Joel Hageman on all three clubs. SQL seeds that if the auth user exists; otherwise `ensure_temp_admin()` on login backfills only those three named clubs. `claim_first_admin()` still claims Ski Paradise Cleveland if it has no admins. Do not hardcode extra admin emails. Non-admin members cannot approve.
 
-The hosted Mini does **not** seed the old 30-name list. `preview/club-roster.js` is unused and empty. `SEED_GEN` is `invite-only-1`: leftover `seed: true` people are stripped and not replaced.
+Invite copy-link (`invite.html?token=`) is leftover so old tokens still work; do not promote it. Settings no longer has **Invite someone**. Admin no longer has **Create invite** / **Open invites**.
 
-**Privacy (hosted):** guest Preview on https is personal-only — themselves, no live club roster, boards hidden, note **Sign in to see Ski Paradise Cleveland.** `file://` Mini stays a personal logbook without the live club roster. Only invited **and** admin-approved people appear on roster / board / dropdown.
+The hosted Mini does **not** seed the old 30-name list. `preview/club-roster.js` is unused and empty. `SEED_GEN` is `invite-only-1` (name only; leftover `seed: true` people are stripped and not replaced).
 
-Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitted slalom sets and kneeboard landings) are shared for approved members, with High fives and comments. Personal Mini history can stay on this device. Guest Preview is personal-only. Do not seed fake club performances.
+**Privacy (hosted):** guest Preview on https is personal-only — themselves, no live club roster, boards hidden, note **Sign in to join a club.** `file://` Mini stays a personal logbook without the live club roster. Only admin-approved members of the selected club appear on roster / board / dropdown. Do not leak other clubs’ rosters.
+
+Roster / admins live in lake.world Supabase. **Recent logs** (submitted slalom sets and kneeboard landings) are shared for approved members, with High fives and comments. Personal Mini history can stay on this device. Guest Preview is personal-only. Do not seed fake club performances.
 
 ## Recent logs vs local boards
 
@@ -50,7 +52,7 @@ Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitte
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there.
 
-Slalom tab order: line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → beat average → best 10 → this skier’s sets. The member dropdown lives in the header. A **settings gear** in the header opens mph/kph, a short slalom FAQ (how to log a set, Chart rank, and Beat average), and (for approved members) invite-someone.
+Slalom tab order: line / speed / best-run chips + Submit + personal best → recent logs → latest session → roster names → club board → beat average → best 10 → this skier’s sets. The member dropdown lives in the header. A **settings gear** in the header opens mph/kph, a short slalom FAQ (how to log a set, Chart rank, and Beat average), and (for approved members) Add a junior.
 
 ## Slalom — best of the set
 

@@ -36,6 +36,8 @@
       </div>
       <div class="mast-row mast-auth" id="mast-auth" hidden>
         <span id="mast-user-email"></span>
+        <label class="sr-only" for="club-select">Club</label>
+        <select id="club-select" aria-label="Club" hidden></select>
         <a class="mast-admin-link" id="mast-admin-link" href="admin.html" hidden>Club</a>
         <button type="button" id="signout-btn">Sign Out</button>
       </div>
@@ -53,7 +55,7 @@
       <button type="button" class="tab" role="tab" id="tab-kneeboard" aria-selected="false" aria-controls="panel-kneeboard" data-sport="kneeboard">Kneeboard</button>
     </nav>
 
-    <p class="club-signin-note" id="club-signin-note" hidden>Sign in to see Ski Paradise Cleveland.</p>
+    <p class="club-signin-note" id="club-signin-note" hidden>Sign in to join a club.</p>
     <p class="club-error" id="consume-error" hidden></p>
     <section class="gate-card" id="pending-gate" hidden>
       <h2 class="gate-title">Waiting for approval</h2>
@@ -61,9 +63,20 @@
     </section>
     <section class="gate-card" id="denied-gate" hidden>
       <h2 class="gate-title">Not approved</h2>
-      <p class="legend">This invite was not approved. Ask a member for a new link.</p>
+      <p class="legend">This club did not approve you.</p>
     </section>
-    <p class="club-signin-note" id="invite-only-note" hidden>Ski Paradise Cleveland is invite-only. Ask a member for a link.</p>
+    <section class="gate-card" id="join-gate" hidden>
+      <h2 class="gate-title">Join a club</h2>
+      <p class="legend">Enter your name, pick a club, and request to join. An admin still has to approve you before you can see the roster.</p>
+      <form id="join-club-form" autocomplete="nickname">
+        <label class="chip-label" for="join-name">Your name</label>
+        <input id="join-name" type="text" maxlength="80" placeholder="Name" required>
+        <label class="chip-label" for="join-club">Club</label>
+        <select id="join-club" required></select>
+        <button type="submit" class="btn-primary">Request to join</button>
+      </form>
+      <p class="club-error" id="join-error" hidden></p>
+    </section>
 
     <main>
       <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
@@ -221,23 +234,14 @@
       <p class="faq-a">Latest day versus the average of your two best Charts in the last 12 months (not counting today). Whoever beats their own average by more ranks higher. Chart board stays raw ability.</p>
     </div>
     <div class="settings-section club-tools" id="club-tools" hidden>
-      <form class="add-skier-form" id="create-invite-form" autocomplete="off">
-        <label class="chip-label" for="invite-name">Invite someone</label>
+      <form class="add-skier-form" id="add-junior-form" autocomplete="off">
+        <label class="chip-label" for="junior-name">Add a junior</label>
         <div class="add-row">
-          <input id="invite-name" type="text" maxlength="80" placeholder="Name" required>
-          <button type="submit" class="btn-primary">Create invite link</button>
-        </div>
-        <div class="invite-kind" role="group" aria-label="Invite type">
-          <label><input type="radio" name="invite-kind" value="adult" checked> Adult</label>
-          <label><input type="radio" name="invite-kind" value="junior"> Junior</label>
+          <input id="junior-name" type="text" maxlength="80" placeholder="Name" required>
+          <button type="submit" class="btn-primary">Add junior</button>
         </div>
       </form>
-      <div class="invite-link-box" id="invite-link-row" hidden>
-        <label class="chip-label" for="invite-link-field">Invite link</label>
-        <input id="invite-link-field" type="text" readonly>
-        <button type="button" class="btn-ghost" id="copy-invite-btn">Copy link</button>
-      </div>
-      <p class="legend">One-time link. Send it yourself — lake.world does not email invites. They stay pending until an admin approves. Juniors need a parent signed in to accept.</p>
+      <p class="legend">Juniors have no email. They wait for an admin to approve, then show in your skier list.</p>
       <div id="pending-juniors" hidden></div>
     </div>
   </section>
