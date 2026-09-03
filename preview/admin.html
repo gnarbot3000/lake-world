@@ -44,16 +44,25 @@
         <h1 class="gate-title" id="admin-club-title">Ski Paradise Cleveland</h1>
         <p class="legend" id="admin-role"></p>
 
-        <section class="board-block club-log-section" id="slalom-logs-section">
-          <h2 class="board-title">Slalom</h2>
-          <ul class="board-list" id="slalom-logs-list"></ul>
-          <p class="shelf-empty" id="slalom-logs-empty">No Slalom logs yet.</p>
+        <nav class="club-cats" id="club-cats" role="tablist" aria-label="Club category">
+          <button type="button" class="club-cat is-active" role="tab" data-cat="all" aria-selected="true">All</button>
+          <button type="button" class="club-cat" role="tab" data-cat="slalom" aria-selected="false">Slalom</button>
+          <button type="button" class="club-cat" role="tab" data-cat="kneeboard" aria-selected="false">Kneeboard</button>
+        </nav>
+
+        <section class="board-block club-log-section" id="club-leaderboard-section" hidden>
+          <h2 class="board-title" id="club-leaderboard-title">Leaderboard</h2>
+          <p class="board-kicker" id="club-leaderboard-kicker"></p>
+          <ul class="board-list club-dense-list" id="club-leaderboard-list"></ul>
+          <p class="shelf-empty" id="club-leaderboard-empty">No rankings yet.</p>
+          <button type="button" class="see-more-btn" id="club-leaderboard-more" data-act="see-more-leaderboard" hidden>See more</button>
         </section>
 
-        <section class="board-block club-log-section" id="kneeboard-logs-section">
-          <h2 class="board-title">Kneeboard</h2>
-          <ul class="board-list" id="kneeboard-logs-list"></ul>
-          <p class="shelf-empty" id="kneeboard-logs-empty">No Kneeboard logs yet.</p>
+        <section class="board-block club-log-section" id="club-recent-section">
+          <h2 class="board-title" id="club-recent-title">Recent activity</h2>
+          <ul class="board-list club-dense-list" id="club-recent-list"></ul>
+          <p class="shelf-empty" id="club-recent-empty">No activity yet.</p>
+          <button type="button" class="see-more-btn" id="club-recent-more" data-act="see-more-recent" hidden>See more</button>
         </section>
 
         <section class="board-block" id="pending-section" hidden>

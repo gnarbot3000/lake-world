@@ -2,6 +2,9 @@
   "use strict";
 
   var PHOTO_BUCKET = "kneeboard-photos";
+  var RECENT_PAGE = 10;
+  var RECENT_MORE = 20;
+  var LB_PAGE = 10;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -16,27 +19,48 @@
     return row && row.is_junior && name.indexOf("(junior)") === -1 ? name + " (junior)" : name;
   }
 
-  function prettyDate(value, includeTime) {
-    var date = new Date(value);
-    if (isNaN(date.getTime())) return String(value || "").slice(0, 10);
-    var options = includeTime
-      ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
-      : { month: "short", day: "numeric" };
-    return date.toLocaleString([], options);
+  /* Same prettyDateTime style as Mini Slalom history (month day, h:mm AM/PM). */
+  function prettyDateTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      var raw = String(iso);
+      if (raw.length >= 10) {
+        var p = raw.slice(0, 10).split("-");
+        var monthsShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        var m = parseInt(p[1], 10);
+        var day = parseInt(p[2], 10);
+        if (!m || !day || !p[0]) return raw;
+        return monthsShort[m - 1] + " " + day;
+      }
+      return raw;
+    }
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var h = d.getHours();
+    var mins = d.getMinutes();
+    var ampm = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12;
+    if (!h12) h12 = 12;
+    var minsStr = mins < 10 ? "0" + mins : String(mins);
+    return months[d.getMonth()] + " " + d.getDate() + ", " + h12 + ":" + minsStr + " " + ampm;
   }
 
   function passLabel(row) {
     return String(Number(row.buoys)) + " · " + row.off + " off · " + row.mph + " mph";
   }
 
-  function chartText(row) {
+  function chartScore(row) {
     var speeds = [28, 30, 32, 34, 36];
     var lines = [15, 22, 28, 32];
     var speed = speeds.indexOf(parseInt(row.mph, 10));
     var line = lines.indexOf(parseInt(row.off, 10));
     if (speed < 0) speed = 0;
     if (line < 0) line = 0;
-    return String(speed * 24 + line * 6 + Number(row.buoys || 0));
+    return speed * 24 + line * 6 + Number(row.buoys || 0);
+  }
+
+  function chartText(row) {
+    return String(chartScore(row));
   }
 
   function commentIcon() {
@@ -85,14 +109,31 @@
     this.showError = options.showError || function () {};
     this.rows = [];
     this.open = {};
+    this.category = "all";
+    this.recentLimit = RECENT_PAGE;
+    this.leaderboardLimit = LB_PAGE;
     this._photoState = { logId: "", canEdit: false, lastFocus: null };
     this._lightboxBound = false;
   }
 
   ClubLogs.prototype.setClub = function (sb, clubId) {
     this.sb = sb;
-    if (this.clubId !== clubId) this.open = {};
+    if (this.clubId !== clubId) {
+      this.open = {};
+      this.category = "all";
+      this.recentLimit = RECENT_PAGE;
+      this.leaderboardLimit = LB_PAGE;
+    }
     this.clubId = clubId;
+  };
+
+  ClubLogs.prototype.setCategory = function (cat) {
+    var next = cat === "slalom" || cat === "kneeboard" ? cat : "all";
+    if (this.category === next) return;
+    this.category = next;
+    this.recentLimit = RECENT_PAGE;
+    this.leaderboardLimit = LB_PAGE;
+    this.paint();
   };
 
   ClubLogs.prototype.focusComposer = function (kind, id) {
@@ -238,7 +279,7 @@
     var isOpen = !!this.open[key(kind, row.id)];
     var html = '<li class="board-row recency-row"><div class="recency-top">';
     html += '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span>';
-    html += '<span class="board-date">' + escapeHtml(prettyDate(row.logged_at, kind === "slalom")) + '</span></div>';
+    html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + '</span></div>';
     html += '<div class="recency-detail"><div class="recency-facts">';
     if (kind === "kneeboard") html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + '</span>';
     else html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + '</span><span class="board-chart">Chart ' + escapeHtml(chartText(row)) + '</span>';
@@ -268,15 +309,149 @@
     return html + '</li>';
   };
 
+  /* Slalom: best Chart per skier from selected-club hosted slalom logs in the recency payload. */
+  ClubLogs.prototype.slalomLeaderboard = function () {
+    var best = {};
+    var i;
+    for (i = 0; i < this.rows.length; i++) {
+      var row = this.rows[i];
+      if (row.kind !== "slalom" || !row.member_id) continue;
+      var score = chartScore(row);
+      var prev = best[row.member_id];
+      if (!prev || score > prev.score || (score === prev.score && new Date(row.logged_at) > new Date(prev.logged_at))) {
+        best[row.member_id] = {
+          member_id: row.member_id,
+          display_name: recencyName(row),
+          score: score,
+          chart: chartText(row),
+          pass: passLabel(row),
+          logged_at: row.logged_at
+        };
+      }
+    }
+    return Object.keys(best).map(function (id) { return best[id]; }).sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.logged_at) - new Date(a.logged_at);
+    });
+  };
+
+  /* Kneeboard: most distinct tricks landed (unique trick_name) from selected-club logs. */
+  ClubLogs.prototype.kneeboardLeaderboard = function () {
+    var map = {};
+    var i;
+    for (i = 0; i < this.rows.length; i++) {
+      var row = this.rows[i];
+      if (row.kind !== "kneeboard" || !row.member_id) continue;
+      var entry = map[row.member_id];
+      if (!entry) {
+        entry = {
+          member_id: row.member_id,
+          display_name: recencyName(row),
+          tricks: {},
+          count: 0,
+          logged_at: row.logged_at
+        };
+        map[row.member_id] = entry;
+      }
+      var trick = String(row.trick_name || "").trim().toLowerCase();
+      if (trick && !entry.tricks[trick]) {
+        entry.tricks[trick] = true;
+        entry.count += 1;
+      }
+      if (new Date(row.logged_at) > new Date(entry.logged_at)) {
+        entry.logged_at = row.logged_at;
+        entry.display_name = recencyName(row);
+      }
+    }
+    return Object.keys(map).map(function (id) { return map[id]; }).sort(function (a, b) {
+      if (b.count !== a.count) return b.count - a.count;
+      return new Date(b.logged_at) - new Date(a.logged_at);
+    });
+  };
+
+  ClubLogs.prototype.leaderboardHtml = function (entry, rank, kind) {
+    var html = '<li class="board-row club-lb-row is-' + (kind === "slalom" ? "slalom" : "kneeboard") + '">';
+    html += '<span class="board-rank">' + rank + "</span>";
+    html += '<span class="board-name">' + escapeHtml(entry.display_name) + "</span>";
+    if (kind === "slalom") {
+      html += '<span class="board-pass">' + escapeHtml(entry.pass) + "</span>";
+      html += '<span class="board-chart">Chart ' + escapeHtml(entry.chart) + "</span>";
+    } else {
+      html += '<span class="board-metric">' + entry.count + (entry.count === 1 ? " trick" : " tricks") + "</span>";
+    }
+    html += "</li>";
+    return html;
+  };
+
+  ClubLogs.prototype.paintCats = function () {
+    var nav = document.getElementById("club-cats");
+    if (!nav) return;
+    var buttons = nav.querySelectorAll(".club-cat");
+    var i;
+    for (i = 0; i < buttons.length; i++) {
+      var btn = buttons[i];
+      var cat = btn.getAttribute("data-cat") || "all";
+      var on = cat === this.category;
+      if (on) btn.classList.add("is-active");
+      else btn.classList.remove("is-active");
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    }
+  };
+
   ClubLogs.prototype.paint = function () {
     var self = this;
-    ["slalom", "kneeboard"].forEach(function (kind) {
-      var list = document.getElementById(kind + "-logs-list");
-      var empty = document.getElementById(kind + "-logs-empty");
-      var rows = self.rows.filter(function (row) { return row.kind === kind; });
-      if (list) list.innerHTML = rows.map(function (row) { return self.rowHtml(row); }).join("");
-      if (empty) empty.hidden = rows.length > 0;
-    });
+    this.paintCats();
+
+    var lbSection = document.getElementById("club-leaderboard-section");
+    var lbList = document.getElementById("club-leaderboard-list");
+    var lbEmpty = document.getElementById("club-leaderboard-empty");
+    var lbMore = document.getElementById("club-leaderboard-more");
+    var lbTitle = document.getElementById("club-leaderboard-title");
+    var lbKicker = document.getElementById("club-leaderboard-kicker");
+    var recentTitle = document.getElementById("club-recent-title");
+    var recentList = document.getElementById("club-recent-list");
+    var recentEmpty = document.getElementById("club-recent-empty");
+    var recentMore = document.getElementById("club-recent-more");
+
+    var cat = this.category;
+    var showLb = cat === "slalom" || cat === "kneeboard";
+    if (lbSection) lbSection.hidden = !showLb;
+
+    if (showLb) {
+      var ranks = cat === "slalom" ? this.slalomLeaderboard() : this.kneeboardLeaderboard();
+      if (lbTitle) lbTitle.textContent = "Leaderboard";
+      if (lbKicker) {
+        lbKicker.textContent = cat === "slalom"
+          ? "Best Chart from this club’s hosted slalom logs"
+          : "Most distinct tricks landed in this club";
+      }
+      var shownLb = ranks.slice(0, this.leaderboardLimit);
+      if (lbList) {
+        lbList.innerHTML = shownLb.map(function (entry, idx) {
+          return self.leaderboardHtml(entry, idx + 1, cat);
+        }).join("");
+      }
+      if (lbEmpty) lbEmpty.hidden = ranks.length > 0;
+      if (lbMore) lbMore.hidden = ranks.length <= this.leaderboardLimit;
+    } else {
+      if (lbList) lbList.innerHTML = "";
+      if (lbEmpty) lbEmpty.hidden = true;
+      if (lbMore) lbMore.hidden = true;
+    }
+
+    var filtered = this.rows;
+    if (cat === "slalom" || cat === "kneeboard") {
+      filtered = this.rows.filter(function (row) { return row.kind === cat; });
+    }
+    if (recentTitle) {
+      recentTitle.textContent = cat === "all" ? "Recent activity" : "Recent " + (cat === "slalom" ? "Slalom" : "Kneeboard");
+    }
+    var shownRecent = filtered.slice(0, this.recentLimit);
+    if (recentList) {
+      recentList.innerHTML = shownRecent.map(function (row) { return self.rowHtml(row); }).join("");
+    }
+    if (recentEmpty) recentEmpty.hidden = filtered.length > 0;
+    if (recentMore) recentMore.hidden = filtered.length <= this.recentLimit;
   };
 
   ClubLogs.prototype.load = function () {
@@ -302,6 +477,20 @@
     var act = button.getAttribute("data-act");
     var kind = button.getAttribute("data-kind");
     var id = button.getAttribute("data-id");
+    if (act === "set-cat") {
+      this.setCategory(button.getAttribute("data-cat") || "all");
+      return true;
+    }
+    if (act === "see-more-recent") {
+      this.recentLimit += RECENT_MORE;
+      this.paint();
+      return true;
+    }
+    if (act === "see-more-leaderboard") {
+      this.leaderboardLimit += LB_PAGE;
+      this.paint();
+      return true;
+    }
     if (act === "toggle-comments") {
       var rowKey = key(kind, id);
       var willOpen = !this.open[rowKey];
