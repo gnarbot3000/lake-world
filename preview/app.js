@@ -57,6 +57,10 @@
     return window.LAKE_CLUB || {};
   }
 
+  function liveClubName() {
+    return clubState().clubName || CLUB;
+  }
+
   function clubVisible() {
     return clubState().status === "approved";
   }
@@ -1741,6 +1745,9 @@
     var junior = document.getElementById("junior-block");
     var footer = document.querySelector("footer p");
     var kicker = document.querySelector("#club-board .board-kicker");
+    var recencyKicker = document.querySelector("#recency-board .board-kicker");
+    var rosterKicker = document.querySelector("#club-roster-block .board-kicker");
+    var name = liveClubName();
     if (note) note.hidden = vis;
     if (recency) recency.hidden = !vis;
     if (session) session.hidden = !vis;
@@ -1748,10 +1755,12 @@
     if (beat) beat.hidden = !vis;
     if (best) best.hidden = !vis;
     if (junior) junior.hidden = true;
-    if (kicker) kicker.textContent = CLUB;
+    if (kicker) kicker.textContent = name;
+    if (recencyKicker) recencyKicker.textContent = name;
+    if (rosterKicker) rosterKicker.textContent = name;
     if (footer) {
       footer.textContent = vis
-        ? "lake.world · " + CLUB + " · recency is shared"
+        ? "lake.world · " + name + " · recency is shared"
         : "lake.world · this device only";
     }
     if (window.LakeClubUi && typeof window.LakeClubUi.paint === "function") {

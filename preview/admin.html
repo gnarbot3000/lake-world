@@ -27,6 +27,8 @@
       </div>
       <div class="mast-row mast-auth" id="mast-auth" hidden>
         <span id="mast-user-email"></span>
+        <label class="sr-only" for="club-select">Club</label>
+        <select id="club-select" aria-label="Club" hidden></select>
         <a class="mast-admin-link" href="index.html">Mini</a>
         <button type="button" id="signout-btn">Sign Out</button>
       </div>
@@ -35,39 +37,12 @@
       <p class="club-error" id="admin-error" hidden></p>
       <section class="gate-card" id="admin-gate" hidden>
         <h1 class="gate-title">Club admin</h1>
-        <p class="legend" id="admin-gate-copy">Sign in from lake.world to manage Ski Paradise Cleveland.</p>
+        <p class="legend" id="admin-gate-copy">Sign in from lake.world to manage a club.</p>
         <a class="preview-nav" href="../index.html">Sign in</a>
       </section>
       <div id="admin-app" hidden>
-        <h1 class="gate-title">Ski Paradise Cleveland</h1>
+        <h1 class="gate-title" id="admin-club-title">Ski Paradise Cleveland</h1>
         <p class="legend" id="admin-role"></p>
-
-        <section class="board-block" id="invite-section">
-          <h2 class="board-title">Create invite</h2>
-          <p class="board-kicker">Named, one-time link. The site does not send email.</p>
-          <form class="add-skier-form" id="create-invite-form" autocomplete="off">
-            <label class="chip-label" for="invite-name">Name</label>
-            <div class="add-row">
-              <input id="invite-name" type="text" maxlength="80" placeholder="Name" required>
-              <button type="submit" class="btn-primary">Create link</button>
-            </div>
-            <div class="invite-kind" role="group" aria-label="Invite type">
-              <label><input type="radio" name="invite-kind" value="adult" checked> Adult</label>
-              <label><input type="radio" name="invite-kind" value="junior"> Junior</label>
-            </div>
-          </form>
-          <div class="invite-link-box" id="invite-link-row" hidden>
-            <label class="chip-label" for="invite-link-field">Invite link</label>
-            <input id="invite-link-field" type="text" readonly>
-            <button type="button" class="btn-ghost" id="copy-invite-btn">Copy link</button>
-          </div>
-        </section>
-
-        <section class="board-block" id="open-invites-section">
-          <h2 class="board-title">Open invites</h2>
-          <ul class="admin-list" id="open-invites-list"></ul>
-          <p class="shelf-empty" id="open-invites-empty">No open invites.</p>
-        </section>
 
         <section class="board-block" id="pending-section" hidden>
           <h2 class="board-title">Pending</h2>
