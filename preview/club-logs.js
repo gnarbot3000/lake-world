@@ -5,6 +5,8 @@
   var RECENT_PAGE = 10;
   var RECENT_MORE = 20;
   var LB_PAGE = 10;
+  var LB_MEMBER_PAGE = 5;
+  var LB_MEMBER_MORE = 10;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -112,6 +114,8 @@
     this.category = "all";
     this.recentLimit = RECENT_PAGE;
     this.leaderboardLimit = LB_PAGE;
+    this.expandedMemberId = "";
+    this.expandedMemberLimit = LB_MEMBER_PAGE;
     this._photoState = { logId: "", canEdit: false, lastFocus: null };
     this._lightboxBound = false;
   }
@@ -123,6 +127,8 @@
       this.category = "all";
       this.recentLimit = RECENT_PAGE;
       this.leaderboardLimit = LB_PAGE;
+      this.expandedMemberId = "";
+      this.expandedMemberLimit = LB_MEMBER_PAGE;
     }
     this.clubId = clubId;
   };
@@ -133,6 +139,8 @@
     this.category = next;
     this.recentLimit = RECENT_PAGE;
     this.leaderboardLimit = LB_PAGE;
+    this.expandedMemberId = "";
+    this.expandedMemberLimit = LB_MEMBER_PAGE;
     this.paint();
   };
 
@@ -369,15 +377,65 @@
     });
   };
 
+  ClubLogs.prototype.memberRuns = function (memberId, kind) {
+    var mid = String(memberId || "");
+    var sport = kind === "kneeboard" ? "kneeboard" : "slalom";
+    return this.rows.filter(function (row) {
+      return row && String(row.member_id || "") === mid && row.kind === sport;
+    });
+  };
+
+  ClubLogs.prototype.lbRunHtml = function (row, kind) {
+    var html = '<li class="club-lb-run">';
+    if (kind === "kneeboard") {
+      html += '<span class="club-lb-run-fact">' + escapeHtml(row.trick_name || "") + "</span>";
+    } else {
+      html += '<span class="club-lb-run-fact">' + escapeHtml(passLabel(row)) + "</span>";
+      html += '<span class="club-lb-run-chart">Chart ' + escapeHtml(chartText(row)) + "</span>";
+    }
+    html += '<span class="club-lb-run-date">' + escapeHtml(prettyDateTime(row.logged_at)) + "</span>";
+    html += "</li>";
+    return html;
+  };
+
   ClubLogs.prototype.leaderboardHtml = function (entry, rank, kind) {
-    var html = '<li class="board-row club-lb-row is-' + (kind === "slalom" ? "slalom" : "kneeboard") + '">';
+    var memberId = String(entry.member_id || "");
+    var expanded = this.expandedMemberId && this.expandedMemberId === memberId;
+    var html = '<li class="board-row club-lb-row is-' + (kind === "slalom" ? "slalom" : "kneeboard");
+    if (expanded) html += " is-expanded";
+    html += '" data-member="' + escapeHtml(memberId) + '">';
+    html += '<div class="club-lb-main">';
     html += '<span class="board-rank">' + rank + "</span>";
-    html += '<span class="board-name">' + escapeHtml(entry.display_name) + "</span>";
+    html += '<button type="button" class="board-name-btn" data-act="toggle-lb-member" data-member="' +
+      escapeHtml(memberId) + '" aria-expanded="' + (expanded ? "true" : "false") + '">' +
+      escapeHtml(entry.display_name) + "</button>";
     if (kind === "slalom") {
       html += '<span class="board-pass">' + escapeHtml(entry.pass) + "</span>";
       html += '<span class="board-chart">Chart ' + escapeHtml(entry.chart) + "</span>";
     } else {
       html += '<span class="board-metric">' + entry.count + (entry.count === 1 ? " trick" : " tricks") + "</span>";
+    }
+    html += "</div>";
+    if (expanded) {
+      var runs = this.memberRuns(memberId, kind);
+      var limit = this.expandedMemberLimit || LB_MEMBER_PAGE;
+      var shown = runs.slice(0, limit);
+      html += '<div class="club-lb-expand">';
+      if (!shown.length) {
+        html += '<p class="club-lb-expand-empty">No runs in this category yet.</p>';
+      } else {
+        html += '<ul class="club-lb-runs">';
+        var i;
+        for (i = 0; i < shown.length; i++) {
+          html += this.lbRunHtml(shown[i], kind);
+        }
+        html += "</ul>";
+        if (runs.length > limit) {
+          html += '<button type="button" class="see-more-btn club-lb-member-more" data-act="see-more-lb-member" data-member="' +
+            escapeHtml(memberId) + '">See more</button>';
+        }
+      }
+      html += "</div>";
     }
     html += "</li>";
     return html;
@@ -488,6 +546,23 @@
     }
     if (act === "see-more-leaderboard") {
       this.leaderboardLimit += LB_PAGE;
+      this.paint();
+      return true;
+    }
+    if (act === "toggle-lb-member") {
+      var mid = button.getAttribute("data-member") || "";
+      if (this.expandedMemberId === mid) {
+        this.expandedMemberId = "";
+        this.expandedMemberLimit = LB_MEMBER_PAGE;
+      } else {
+        this.expandedMemberId = mid;
+        this.expandedMemberLimit = LB_MEMBER_PAGE;
+      }
+      this.paint();
+      return true;
+    }
+    if (act === "see-more-lb-member") {
+      this.expandedMemberLimit += LB_MEMBER_MORE;
       this.paint();
       return true;
     }
