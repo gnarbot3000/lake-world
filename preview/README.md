@@ -22,15 +22,8 @@ The Mini opens on **Slalom**. Kneeboard is the second tab. Switching skiers swit
 
 ## Kneeboard
 
-- **Tricks**, not ticks. Check a trick when you land it.
-- Kneeboard is secondary (second tab).
-- **Easy / unlock** — one-and-done. First success date only. No repeat diary. Seeded easy: surface 360 right / left / front-to-front, surface 180, surface wrap, ollie, tumble turn.
-- **Hard / logbook** — completion count plus a list of dates. Seeded hard: heli (wake 360, handle pass), wake 360, surface 540, surface 720, backroll, front flip, wake 540, handle flip.
-- Flip any row between Easy and Hard.
-- First land (or first write-in add) stamps **today**. Edit the date if you actually landed it last Saturday.
-- Add your own trick (example: *standing up on the kneeboard*). Write-ins default to easy unlock unless you mark Hard. They stamp today as first landed; uncheck or edit the date if needed.
-- Optional **still photo or short video** on a landed trick. Pick a file, preview it, remove it. Media is stored in this browser’s IndexedDB only — not localStorage, not the cloud. Huge videos are still attempted; if the browser refuses, you get a preview warning.
-- Progress counts (landed / total · percent).
+Home is a hive feed, not a giant easy/hard list. Working range is inferred from what you landed lately (seed difficulties 1–10). Show **3 landed near your band** and **3 to try** at that same band. Search to log something not in those six (catalog match lands it; otherwise a write-in at your current band). Cold start uses band 3 (surface tricks). Check a trick to land it. Guest Preview stays personal-only. Hive-adjusted club difficulty can come later.
+
 
 ## Club roster (invite-only)
 

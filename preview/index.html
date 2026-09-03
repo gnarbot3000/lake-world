@@ -69,21 +69,19 @@
       <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
         <div class="progress-card" data-progress="kneeboard">
           <div class="progress-meta">
-            <h2>Kneeboard tricks</h2>
+            <h2>Kneeboard</h2>
             <p class="progress-counts"></p>
           </div>
           <div class="lake-meter" aria-hidden="true"><span class="lake-fill"></span></div>
         </div>
-        <p class="legend">Easy unlocks once. Hard keeps a logbook.</p>
-        <ol class="trick-list" id="list-kneeboard"></ol>
-        <form class="add-form" data-sport="kneeboard" autocomplete="off">
-          <label for="add-kneeboard">Add a trick</label>
+        <form class="add-form kb-search" data-sport="kneeboard" autocomplete="off">
+          <label for="add-kneeboard">Search or log a trick</label>
           <div class="add-row">
-            <input id="add-kneeboard" name="name" type="text" maxlength="80" placeholder="e.g. standing up on the kneeboard" required>
-            <label class="hard-opt"><input type="checkbox" name="hard"> Hard</label>
+            <input id="add-kneeboard" name="name" type="search" maxlength="80" placeholder="Surface 360 left" enterkeyhint="go">
+            <button type="submit" class="btn-primary">Log it</button>
           </div>
-          <button type="submit" class="btn-primary">Add trick</button>
         </form>
+        <ol class="trick-list" id="list-kneeboard"></ol>
       </section>
 
       <section class="panel is-active" id="panel-slalom" role="tabpanel" aria-labelledby="tab-slalom" data-sport="slalom">
