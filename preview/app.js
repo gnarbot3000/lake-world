@@ -6,6 +6,12 @@
   var IDB_NAME = "nrs-ski-lake-tricks-v2";
   var IDB_STORE = "media";
 
+  /* Personal Kneeboard trick photos: private, device-local, IndexedDB
+     only (see photos.js). Never written to STORAGE_KEY/localStorage. */
+  var PHOTO_MAX_INPUT_BYTES = 15 * 1024 * 1024;
+  var PHOTO_MAX_DIMENSION = 1600;
+  var PHOTO_QUALITY = 0.82;
+
   var KNEEBOARD = [
     { id: "kb-ollie", name: "Ollie", diff: 2, mode: "easy" },
     { id: "kb-s90", name: "Surface 90", diff: 2, mode: "easy" },
@@ -1423,6 +1429,291 @@
     fillMedia("kneeboard");
   }
 
+  /* ---- trick photos: private, per-person, IndexedDB-backed ---- */
+  /* Uses window.LakePhotos (preview/photos.js) for storage. This block
+     only handles validation, decode/downscale/compress, and the UI
+     (icon state + lightbox). Nothing here ever touches localStorage. */
+
+  function photoNamespace() {
+    if (window.LakePhotos && typeof window.LakePhotos.namespaceFor === "function") {
+      return window.LakePhotos.namespaceFor(window.LAKE_USER_ID);
+    }
+    return window.LAKE_USER_ID ? ("u-" + window.LAKE_USER_ID) : "guest";
+  }
+
+  function photoKeyFor(sport, trickId) {
+    var p = currentPerson();
+    var pid = p && p.id ? p.id : "p1";
+    if (window.LakePhotos && typeof window.LakePhotos.keyFor === "function") {
+      return window.LakePhotos.keyFor(photoNamespace(), pid, sport + ":" + trickId);
+    }
+    return photoNamespace() + "::" + pid + "::" + sport + ":" + trickId;
+  }
+
+  function photoIconSvg(filled) {
+    if (filled) {
+      return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+        '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="#FFFFFF"/>' +
+        '<circle cx="12" cy="12.1" r="2.15" fill="var(--accent)"/>' +
+        "</svg>";
+    }
+    return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      '<circle cx="12" cy="12.1" r="2.15" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      "</svg>";
+  }
+
+  function renderPhotoButton(sport, trickId) {
+    var idAttr = escapeHtml(trickId);
+    return '<span class="trick-photo-wrap">' +
+      '<button type="button" class="trick-photo-btn is-empty" data-act="photo" data-sport="' + sport +
+      '" data-id="' + idAttr + '" aria-label="Add trick photo">' +
+      '<span class="trick-photo-icon">' + photoIconSvg(false) + "</span>" +
+      "</button>" +
+      '<input type="file" accept="image/*" class="trick-photo-input" data-sport="' + sport +
+      '" data-id="' + idAttr + '" hidden>' +
+      "</span>";
+  }
+
+  function setPhotoButtonState(btn, filled) {
+    if (!btn) return;
+    btn.classList.toggle("is-filled", !!filled);
+    btn.classList.toggle("is-empty", !filled);
+    btn.setAttribute("aria-label", filled ? "View trick photo" : "Add trick photo");
+    var icon = btn.querySelector(".trick-photo-icon");
+    if (icon) icon.innerHTML = photoIconSvg(!!filled);
+  }
+
+  function fillTrickPhotos(sport) {
+    if (sport !== "kneeboard") return;
+    if (!window.LakePhotos) return;
+    var btns = document.querySelectorAll("#list-" + sport + " .trick-photo-btn");
+    var i;
+    for (i = 0; i < btns.length; i++) {
+      (function (btn) {
+        var bSport = btn.getAttribute("data-sport");
+        var bId = btn.getAttribute("data-id");
+        var key = photoKeyFor(bSport, bId);
+        window.LakePhotos.get(key).then(function (rec) {
+          setPhotoButtonState(btn, !!(rec && rec.blob));
+        }).catch(function () {
+          setPhotoButtonState(btn, false);
+        });
+      })(btns[i]);
+    }
+  }
+
+  function supportsWebpEncode() {
+    try {
+      var c = document.createElement("canvas");
+      c.width = 1;
+      c.height = 1;
+      return c.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  var photoOutputTypeCache = null;
+
+  function photoOutputType() {
+    if (!photoOutputTypeCache) {
+      photoOutputTypeCache = supportsWebpEncode() ? "image/webp" : "image/jpeg";
+    }
+    return photoOutputTypeCache;
+  }
+
+  function decodeImageBitmap(file) {
+    if (typeof createImageBitmap === "function") {
+      var withOrientation;
+      try {
+        withOrientation = createImageBitmap(file, { imageOrientation: "from-image" });
+      } catch (err) {
+        withOrientation = null;
+      }
+      if (withOrientation && typeof withOrientation.then === "function") {
+        return withOrientation.catch(function () {
+          return createImageBitmap(file);
+        });
+      }
+    }
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("decode failed"));
+      };
+      img.src = url;
+    });
+  }
+
+  function processPhotoFile(file) {
+    if (!file || !/^image\//i.test(file.type || "")) {
+      return Promise.reject({ code: "not-image", message: "Please choose a photo (JPEG, PNG, HEIC, etc)." });
+    }
+    if (file.size > PHOTO_MAX_INPUT_BYTES) {
+      return Promise.reject({ code: "too-large", message: "That photo is larger than 15MB. Choose a smaller one." });
+    }
+    return decodeImageBitmap(file).catch(function () {
+      throw { code: "decode-failed", message: "Couldn\u2019t read that photo. Try a different file." };
+    }).then(function (bitmap) {
+      var w0 = bitmap.width || bitmap.naturalWidth || 0;
+      var h0 = bitmap.height || bitmap.naturalHeight || 0;
+      if (!w0 || !h0) {
+        throw { code: "decode-failed", message: "Couldn\u2019t read that photo. Try a different file." };
+      }
+      var scale = Math.min(1, PHOTO_MAX_DIMENSION / Math.max(w0, h0));
+      var outW = Math.max(1, Math.round(w0 * scale));
+      var outH = Math.max(1, Math.round(h0 * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(bitmap, 0, 0, outW, outH);
+      if (bitmap.close) {
+        try { bitmap.close(); } catch (err) {}
+      }
+      var type = photoOutputType();
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(function (blob) {
+          if (!blob) {
+            reject({ code: "encode-failed", message: "Couldn\u2019t process that photo. Try again." });
+            return;
+          }
+          resolve({ blob: blob, type: blob.type || type, width: outW, height: outH });
+        }, type, PHOTO_QUALITY);
+      });
+    });
+  }
+
+  function handleTrickPhotoFile(sport, trickId, file, btn, onSaved) {
+    if (!window.LakePhotos) {
+      showToast("log", "Photos are not supported in this browser.");
+      return;
+    }
+    var key = photoKeyFor(sport, trickId);
+    processPhotoFile(file).then(function (result) {
+      var record = {
+        blob: result.blob,
+        type: result.type,
+        width: result.width,
+        height: result.height,
+        savedAt: new Date().toISOString()
+      };
+      return window.LakePhotos.put(key, record);
+    }).then(function () {
+      setPhotoButtonState(btn, true);
+      showToast("log", "Photo saved to this logbook");
+      afterProgress({ hasMedia: true });
+      if (typeof onSaved === "function") onSaved();
+    }).catch(function (err) {
+      var msg = (err && err.message) || "Couldn\u2019t save that photo.";
+      showToast("log", msg);
+    });
+  }
+
+  var photoLightboxState = { sport: "", id: "", btn: null, url: "" };
+  var photoLightboxLastFocus = null;
+
+  function photoLightboxFocusables() {
+    var dlg = document.getElementById("photo-lightbox");
+    if (!dlg) return [];
+    var nodes = dlg.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    var out = [];
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.hidden) continue;
+      if (n.closest && n.closest("[hidden]")) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function onPhotoLightboxKeydown(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closePhotoLightbox();
+      return;
+    }
+    if (e.key === "Tab") {
+      var focusables = photoLightboxFocusables();
+      if (!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  function resetPhotoLightboxConfirm() {
+    var confirmBlock = document.getElementById("photo-lightbox-confirm");
+    var actions = document.querySelector(".photo-lightbox-actions");
+    if (confirmBlock) confirmBlock.hidden = true;
+    if (actions) actions.hidden = false;
+  }
+
+  function closePhotoLightbox() {
+    var dlg = document.getElementById("photo-lightbox");
+    var scrim = document.getElementById("photo-lightbox-scrim");
+    if (dlg) dlg.hidden = true;
+    if (scrim) scrim.hidden = true;
+    if (photoLightboxState.url) {
+      try { URL.revokeObjectURL(photoLightboxState.url); } catch (err) {}
+    }
+    resetPhotoLightboxConfirm();
+    document.body.classList.remove("photo-lightbox-open");
+    document.removeEventListener("keydown", onPhotoLightboxKeydown, true);
+    var restore = photoLightboxLastFocus;
+    photoLightboxState = { sport: "", id: "", btn: null, url: "" };
+    photoLightboxLastFocus = null;
+    if (restore && typeof restore.focus === "function") {
+      try { restore.focus(); } catch (err) {}
+    }
+  }
+
+  function openPhotoLightbox(sport, trickId, triggerBtn) {
+    if (!window.LakePhotos) return;
+    var key = photoKeyFor(sport, trickId);
+    window.LakePhotos.get(key).then(function (rec) {
+      if (!rec || !rec.blob) {
+        showToast("log", "No photo saved yet.");
+        return;
+      }
+      var dlg = document.getElementById("photo-lightbox");
+      var scrim = document.getElementById("photo-lightbox-scrim");
+      var img = document.getElementById("photo-lightbox-img");
+      if (!dlg || !scrim || !img) return;
+      if (photoLightboxState.url) {
+        try { URL.revokeObjectURL(photoLightboxState.url); } catch (err) {}
+      }
+      var url = URL.createObjectURL(rec.blob);
+      photoLightboxLastFocus = triggerBtn || document.activeElement;
+      photoLightboxState = { sport: sport, id: trickId, btn: triggerBtn || null, url: url };
+      img.src = url;
+      img.alt = trickNameOf(sport, trickId) + " photo";
+      resetPhotoLightboxConfirm();
+      dlg.hidden = false;
+      scrim.hidden = false;
+      document.body.classList.add("photo-lightbox-open");
+      document.addEventListener("keydown", onPhotoLightboxKeydown, true);
+      var closeBtn = document.getElementById("photo-lightbox-close");
+      if (closeBtn && closeBtn.focus) closeBtn.focus();
+    }).catch(function () {
+      showToast("log", "Couldn\u2019t open that photo.");
+    });
+  }
+
   /* ---- render ---- */
 
   var kbQuery = "";
@@ -1503,8 +1794,15 @@
     if (custom) html += '<span class="write-in">Write-in</span>';
     html += '<span class="kb-diff">' + d + "</span>";
     html += "</span></label></div>";
+    var sideHtml = "";
     if (custom) {
-      html += '<div class="trick-side"><button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button></div>';
+      sideHtml += '<button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button>';
+    }
+    if (landed && sport === "kneeboard") {
+      sideHtml += renderPhotoButton(sport, item.id);
+    }
+    if (sideHtml) {
+      html += '<div class="trick-side">' + sideHtml + "</div>";
     }
     html += "</li>";
     return html;
@@ -1543,6 +1841,7 @@
     }
     list.innerHTML = html;
     updateProgress(sport);
+    fillTrickPhotos(sport);
   }
 
   function updateProgress(sport) {
@@ -2445,6 +2744,15 @@
         afterProgress({ hasMedia: true });
       });
     }
+
+    if (el.classList && el.classList.contains("trick-photo-input") && el.files && el.files[0]) {
+      var photoFile = el.files[0];
+      var photoWrap = el.closest(".trick-photo-wrap");
+      var photoBtn = photoWrap ? photoWrap.querySelector(".trick-photo-btn") : null;
+      handleTrickPhotoFile(sport, id, photoFile, photoBtn);
+      el.value = "";
+      return;
+    }
   });
 
   document.querySelector("main").addEventListener("click", function (e) {
@@ -2518,6 +2826,17 @@
     var id = btn.getAttribute("data-id");
     if (!sport || !id) return;
 
+    if (act === "photo") {
+      if (btn.classList.contains("is-filled")) {
+        openPhotoLightbox(sport, id, btn);
+      } else {
+        var photoWrapC = btn.closest(".trick-photo-wrap");
+        var photoInputC = photoWrapC ? photoWrapC.querySelector(".trick-photo-input") : null;
+        if (photoInputC) photoInputC.click();
+      }
+      return;
+    }
+
     if (act === "mode") {
       var entry = ensureEntry(sport, id);
       if (entry.mode === "hard") {
@@ -2582,6 +2901,7 @@
       delete p.sports[sport].tricks[id];
       afterProgress();
       deleteMedia(mediaKey(sport, id));
+      if (window.LakePhotos) window.LakePhotos.remove(photoKeyFor(sport, id)).catch(function () {});
       renderSport(sport);
       return;
     }
@@ -2670,6 +2990,68 @@
           if (field) field.value = "";
           loadRecency();
         }).catch(function () {});
+    });
+  }
+
+  var photoLightboxCloseBtn = document.getElementById("photo-lightbox-close");
+  if (photoLightboxCloseBtn) {
+    photoLightboxCloseBtn.addEventListener("click", function () { closePhotoLightbox(); });
+  }
+  var photoLightboxScrim = document.getElementById("photo-lightbox-scrim");
+  if (photoLightboxScrim) {
+    photoLightboxScrim.addEventListener("click", function () { closePhotoLightbox(); });
+  }
+  var photoLightboxRemoveBtn = document.getElementById("photo-lightbox-remove");
+  if (photoLightboxRemoveBtn) {
+    photoLightboxRemoveBtn.addEventListener("click", function () {
+      var confirmBlock = document.getElementById("photo-lightbox-confirm");
+      var actions = document.querySelector(".photo-lightbox-actions");
+      if (confirmBlock) confirmBlock.hidden = false;
+      if (actions) actions.hidden = true;
+    });
+  }
+  var photoLightboxConfirmCancelBtn = document.getElementById("photo-lightbox-confirm-cancel");
+  if (photoLightboxConfirmCancelBtn) {
+    photoLightboxConfirmCancelBtn.addEventListener("click", function () {
+      resetPhotoLightboxConfirm();
+    });
+  }
+  var photoLightboxConfirmRemoveBtn = document.getElementById("photo-lightbox-confirm-remove");
+  if (photoLightboxConfirmRemoveBtn) {
+    photoLightboxConfirmRemoveBtn.addEventListener("click", function () {
+      var sport = photoLightboxState.sport;
+      var id = photoLightboxState.id;
+      var btn = photoLightboxState.btn;
+      if (!sport || !id || !window.LakePhotos) {
+        closePhotoLightbox();
+        return;
+      }
+      window.LakePhotos.remove(photoKeyFor(sport, id)).then(function () {
+        setPhotoButtonState(btn, false);
+        closePhotoLightbox();
+        showToast("log", "Photo removed");
+      }).catch(function () {
+        showToast("log", "Couldn\u2019t remove that photo.");
+      });
+    });
+  }
+  var photoLightboxReplaceBtn = document.getElementById("photo-lightbox-replace");
+  var photoLightboxFileInput = document.getElementById("photo-lightbox-file");
+  if (photoLightboxReplaceBtn && photoLightboxFileInput) {
+    photoLightboxReplaceBtn.addEventListener("click", function () {
+      photoLightboxFileInput.click();
+    });
+    photoLightboxFileInput.addEventListener("change", function () {
+      var file = photoLightboxFileInput.files && photoLightboxFileInput.files[0];
+      photoLightboxFileInput.value = "";
+      if (!file) return;
+      var sport = photoLightboxState.sport;
+      var id = photoLightboxState.id;
+      var btn = photoLightboxState.btn;
+      if (!sport || !id) return;
+      handleTrickPhotoFile(sport, id, file, btn, function () {
+        openPhotoLightbox(sport, id, btn);
+      });
     });
   }
 
