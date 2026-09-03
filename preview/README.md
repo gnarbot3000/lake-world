@@ -43,7 +43,7 @@ Roster / invites / admins live in lake.world Supabase. **Recent logs** (submitte
 
 ## Recent logs vs local boards
 
-- **Recent logs** — hosted, approved members only. Newest first, mixing submitted slalom sets and kneeboard landings. Slalom rows show name, date/time, pass (buoys · line · speed), and **Chart**. Kneeboard rows show name, date, trick, easy unlock / hard log. Members can **High five** (one per member per log, toggle off) and comment. Comments show the author’s display name; you can delete your own. No photos/video on recency. Guests and pending users do not see this board.
+- **Recent logs** — hosted, approved members only. Newest first, mixing submitted slalom sets and kneeboard landings. Slalom rows show name, date/time, pass (buoys · line · speed), and **Chart**. Kneeboard rows show name, date, trick, easy unlock / hard log. Members can high-five (hand icon + count, one per member per log, toggle off) and comment Instagram-style: **Name** then body on one line, with a tiny Delete after your own. Composer is Add a comment… plus a text Post. No photos/video on recency. Guests and pending users do not see this board.
 - **Latest session** / **Club board** / **Best 10** — this-device personal boards for you and your juniors. Ranking follows the **slalom chart**, not raw buoy count: faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph); after 36 mph, more off is harder; then buoys. The **Chart** number is that conversion, shown on the slalom screen and on the boards. Empty copy unchanged.
 
 Personal set history stays on this tab under the boards so the current skier’s own sets (and delete) are still right there.

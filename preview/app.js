@@ -1859,15 +1859,14 @@
 
   function highFiveIcon() {
     return '<svg class="highfive-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
-      '<path fill="currentColor" d="M8.1 10.4V6.2a1.35 1.35 0 0 1 2.7 0v4.2h.15V4.7a1.35 1.35 0 1 1 2.7 0v5.6h.15V5.5a1.35 1.35 0 1 1 2.7 0v6h.15V7.6a1.35 1.35 0 1 1 2.7 0V14c0 3.45-2.35 6.15-6.05 6.15-3.25 0-5.8-2.25-5.8-5.55v-1.15H7.2A1.85 1.85 0 0 1 5.35 12V9.3a1.35 1.35 0 0 1 2.7 0v1.1h.05z"/>' +
+      '<path d="M8.1 10.4V6.2a1.35 1.35 0 0 1 2.7 0v4.2h.15V4.7a1.35 1.35 0 1 1 2.7 0v5.6h.15V5.5a1.35 1.35 0 1 1 2.7 0v6h.15V7.6a1.35 1.35 0 1 1 2.7 0V14c0 3.45-2.35 6.15-6.05 6.15-3.25 0-5.8-2.25-5.8-5.55v-1.15H7.2A1.85 1.85 0 0 1 5.35 12V9.3a1.35 1.35 0 0 1 2.7 0v1.1h.05z"/>' +
       "</svg>";
   }
 
   function highFiveLabel(count) {
     var n = parseInt(count, 10);
-    if (!(n > 0)) return "High five";
-    if (n === 1) return "1 High five";
-    return n + " High fives";
+    if (!(n > 0)) return "";
+    return String(n);
   }
 
   function renderRecency() {
@@ -1927,7 +1926,10 @@
       html += '<button type="button" class="highfive-btn' + (row.i_high_five ? " is-on" : "") +
         '" data-act="high-five" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
         '" aria-pressed="' + (row.i_high_five ? "true" : "false") + '" aria-label="High five">';
-      html += highFiveIcon() + "<span>" + escapeHtml(highFiveLabel(row.high_fives)) + "</span></button>";
+      html += highFiveIcon();
+      var fiveLabel = highFiveLabel(row.high_fives);
+      if (fiveLabel) html += '<span class="highfive-count">' + escapeHtml(fiveLabel) + "</span>";
+      html += "</button>";
       var comments = Array.isArray(row.comments) ? row.comments : [];
       if (comments.length) {
         html += '<ul class="comment-list">';
@@ -1936,17 +1938,17 @@
           var com = comments[c] || {};
           html += '<li class="comment-item">';
           html += '<span class="comment-author">' + escapeHtml(com.display_name || "Member") + "</span>";
+          html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
           if (com.mine) {
             html += '<button type="button" class="comment-delete" data-act="delete-comment" data-id="' +
               escapeHtml(com.id || "") + '">Delete</button>';
           }
-          html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
           html += "</li>";
         }
         html += "</ul>";
       }
       html += '<form class="comment-form" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") + '">';
-      html += '<input type="text" maxlength="280" placeholder="Comment" aria-label="Comment" required>';
+      html += '<input type="text" maxlength="280" placeholder="Add a comment…" aria-label="Add a comment" required>';
       html += '<button type="submit">Post</button></form>';
       html += "</div></li>";
     }
