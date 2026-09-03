@@ -6,6 +6,15 @@
   var IDB_NAME = "nrs-ski-lake-tricks-v2";
   var IDB_STORE = "media";
 
+  /* Club-shared Kneeboard trick photos: private Supabase Storage +
+     kneeboard_log_photos metadata for the selected club. Never written
+     to STORAGE_KEY/localStorage as blobs/base64/blob URLs. */
+  var PHOTO_MAX_INPUT_BYTES = 15 * 1024 * 1024;
+  var PHOTO_MAX_DIMENSION = 1600;
+  var PHOTO_QUALITY = 0.82;
+  var PHOTO_BUCKET = "kneeboard-photos";
+  var PHOTO_JOIN_TOAST = "Join a club to share photos";
+
   var KNEEBOARD = [
     { id: "kb-ollie", name: "Ollie", diff: 2, mode: "easy" },
     { id: "kb-s90", name: "Surface 90", diff: 2, mode: "easy" },
@@ -1423,6 +1432,450 @@
     fillMedia("kneeboard");
   }
 
+  /* ---- club-shared kneeboard trick photos (Supabase Storage) ---- */
+
+  var photoMetaByLogId = {};
+  var photoLightboxState = { logId: "", sport: "", trickId: "", btn: null, url: "", canEdit: false, objectPath: "" };
+  var photoLightboxLastFocus = null;
+  var photoOutputTypeCache = null;
+
+  function latestHostedKneeboardLogId(entry) {
+    if (!entry || !Array.isArray(entry.remoteIds)) return "";
+    var i;
+    for (i = entry.remoteIds.length - 1; i >= 0; i--) {
+      if (isUuid(entry.remoteIds[i])) return entry.remoteIds[i];
+    }
+    return "";
+  }
+
+  function hostedLogIdForTrick(sport, trickId) {
+    if (sport !== "kneeboard") return "";
+    return latestHostedKneeboardLogId(getEntry(sport, trickId));
+  }
+
+  function rememberPhotoMeta(meta) {
+    if (!meta || !meta.kneeboard_log_id) return;
+    var id = String(meta.kneeboard_log_id);
+    photoMetaByLogId[id] = {
+      id: meta.id || (photoMetaByLogId[id] && photoMetaByLogId[id].id) || "",
+      kneeboard_log_id: id,
+      club_id: meta.club_id || "",
+      member_id: meta.member_id || "",
+      object_path: meta.object_path || meta.photo_path || "",
+      can_edit: meta.can_edit === true
+    };
+  }
+
+  function clearPhotoMeta(logId) {
+    if (!logId) return;
+    delete photoMetaByLogId[String(logId)];
+  }
+
+  function photoIconSvg(filled) {
+    if (filled) {
+      return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+        '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="#FFFFFF"/>' +
+        '<circle cx="12" cy="12.1" r="2.15" fill="var(--accent)"/>' +
+        "</svg>";
+    }
+    return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      '<circle cx="12" cy="12.1" r="2.15" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      "</svg>";
+  }
+
+  function renderPhotoButton(sport, trickId, logId) {
+    var idAttr = escapeHtml(trickId);
+    var logAttr = escapeHtml(logId || "");
+    return '<span class="trick-photo-wrap">' +
+      '<button type="button" class="trick-photo-btn is-empty" data-act="photo" data-sport="' + sport +
+      '" data-id="' + idAttr + '" data-log-id="' + logAttr + '" aria-label="Add trick photo">' +
+      '<span class="trick-photo-icon">' + photoIconSvg(false) + "</span>" +
+      "</button>" +
+      '<input type="file" accept="image/*" class="trick-photo-input" data-sport="' + sport +
+      '" data-id="' + idAttr + '" data-log-id="' + logAttr + '" hidden>' +
+      "</span>";
+  }
+
+  function renderRecencyPhotoButton(logId, filled) {
+    var logAttr = escapeHtml(logId || "");
+    return '<button type="button" class="recency-photo-btn' + (filled ? " is-filled" : "") +
+      '" data-act="recency-photo" data-kind="kneeboard" data-id="' + logAttr +
+      '" aria-label="View trick photo">' +
+      '<span class="trick-photo-icon">' + photoIconSvg(!!filled) + "</span>" +
+      "</button>";
+  }
+
+  function setPhotoButtonState(btn, filled) {
+    if (!btn) return;
+    btn.classList.toggle("is-filled", !!filled);
+    btn.classList.toggle("is-empty", !filled);
+    btn.setAttribute("aria-label", filled ? "View trick photo" : "Add trick photo");
+    var icon = btn.querySelector(".trick-photo-icon");
+    if (icon) icon.innerHTML = photoIconSvg(!!filled);
+  }
+
+  function setLightboxEditControls(canEdit) {
+    var actions = document.querySelector(".photo-lightbox-actions");
+    if (actions) actions.hidden = !canEdit;
+    if (!canEdit) {
+      var confirmBlock = document.getElementById("photo-lightbox-confirm");
+      if (confirmBlock) confirmBlock.hidden = true;
+    } else {
+      resetPhotoLightboxConfirm();
+    }
+  }
+
+  function supportsWebpEncode() {
+    try {
+      var c = document.createElement("canvas");
+      c.width = 1;
+      c.height = 1;
+      return c.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function photoOutputType() {
+    if (!photoOutputTypeCache) {
+      photoOutputTypeCache = supportsWebpEncode() ? "image/webp" : "image/jpeg";
+    }
+    return photoOutputTypeCache;
+  }
+
+  function decodeImageBitmap(file) {
+    if (typeof createImageBitmap === "function") {
+      var withOrientation;
+      try {
+        withOrientation = createImageBitmap(file, { imageOrientation: "from-image" });
+      } catch (err) {
+        withOrientation = null;
+      }
+      if (withOrientation && typeof withOrientation.then === "function") {
+        return withOrientation.catch(function () {
+          return createImageBitmap(file);
+        });
+      }
+    }
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("decode failed"));
+      };
+      img.src = url;
+    });
+  }
+
+  function processPhotoFile(file) {
+    if (!file || !/^image\//i.test(file.type || "")) {
+      return Promise.reject({ code: "not-image", message: "Please choose a photo (JPEG, PNG, HEIC, etc)." });
+    }
+    if (file.size > PHOTO_MAX_INPUT_BYTES) {
+      return Promise.reject({ code: "too-large", message: "That photo is larger than 15MB. Choose a smaller one." });
+    }
+    return decodeImageBitmap(file).catch(function () {
+      throw { code: "decode-failed", message: "Couldn\u2019t read that photo. Try a different file." };
+    }).then(function (bitmap) {
+      var w0 = bitmap.width || bitmap.naturalWidth || 0;
+      var h0 = bitmap.height || bitmap.naturalHeight || 0;
+      if (!w0 || !h0) {
+        throw { code: "decode-failed", message: "Couldn\u2019t read that photo. Try a different file." };
+      }
+      var scale = Math.min(1, PHOTO_MAX_DIMENSION / Math.max(w0, h0));
+      var outW = Math.max(1, Math.round(w0 * scale));
+      var outH = Math.max(1, Math.round(h0 * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(bitmap, 0, 0, outW, outH);
+      if (bitmap.close) {
+        try { bitmap.close(); } catch (err) {}
+      }
+      var type = photoOutputType();
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(function (blob) {
+          if (!blob) {
+            reject({ code: "encode-failed", message: "Couldn\u2019t process that photo. Try again." });
+            return;
+          }
+          resolve({ blob: blob, type: blob.type || type, width: outW, height: outH });
+        }, type, PHOTO_QUALITY);
+      });
+    });
+  }
+
+  function refreshPhotoMetaForLogIds(ids) {
+    var uniq = [];
+    var seen = {};
+    var i;
+    for (i = 0; i < (ids || []).length; i++) {
+      var id = ids[i];
+      if (!isUuid(id) || seen[id]) continue;
+      seen[id] = true;
+      uniq.push(id);
+    }
+    if (!uniq.length || !hostEnabled() || !window.LakeClub.kneeboardPhotosForLogs) {
+      return Promise.resolve([]);
+    }
+    return window.LakeClub.kneeboardPhotosForLogs(window.LAKE_SB, uniq).then(function (data) {
+      if (!data || data.ok === false) return [];
+      var photos = Array.isArray(data.photos) ? data.photos : [];
+      for (i = 0; i < photos.length; i++) rememberPhotoMeta(photos[i]);
+      return photos;
+    }).catch(function () { return []; });
+  }
+
+  function fillTrickPhotos(sport) {
+    if (sport !== "kneeboard") return;
+    var btns = document.querySelectorAll("#list-" + sport + " .trick-photo-btn");
+    if (!btns.length) return;
+    var ids = [];
+    var i;
+    for (i = 0; i < btns.length; i++) {
+      var logId = btns[i].getAttribute("data-log-id") || hostedLogIdForTrick(sport, btns[i].getAttribute("data-id"));
+      if (logId) {
+        btns[i].setAttribute("data-log-id", logId);
+        ids.push(logId);
+      }
+      setPhotoButtonState(btns[i], !!(logId && photoMetaByLogId[logId] && photoMetaByLogId[logId].object_path));
+    }
+    if (!hostEnabled()) return;
+    refreshPhotoMetaForLogIds(ids).then(function () {
+      for (i = 0; i < btns.length; i++) {
+        var lid = btns[i].getAttribute("data-log-id");
+        setPhotoButtonState(btns[i], !!(lid && photoMetaByLogId[lid] && photoMetaByLogId[lid].object_path));
+      }
+    });
+  }
+
+  function signedUrlForPath(objectPath) {
+    if (!window.LAKE_SB || !objectPath) {
+      return Promise.reject(new Error("missing path"));
+    }
+    return window.LAKE_SB.storage.from(PHOTO_BUCKET).createSignedUrl(objectPath, 120).then(function (res) {
+      if (res.error || !res.data || !res.data.signedUrl) {
+        throw res.error || new Error("signed url failed");
+      }
+      return res.data.signedUrl;
+    });
+  }
+
+  function uploadProcessedPhoto(logId, processed) {
+    var preparedPath = "";
+    return window.LakeClub.prepareKneeboardPhoto(window.LAKE_SB, logId).then(function (prep) {
+      if (!prep || prep.ok === false) {
+        throw { code: (prep && prep.code) || "prepare", message: (prep && prep.error) || "Couldn\u2019t prepare that upload." };
+      }
+      preparedPath = prep.object_path;
+      var type = processed.type || "image/webp";
+      if (type === "image/jpeg" && /\.webp$/i.test(preparedPath)) {
+        preparedPath = preparedPath.replace(/\.webp$/i, ".jpg");
+      }
+      return window.LAKE_SB.storage.from(PHOTO_BUCKET).upload(preparedPath, processed.blob, {
+        contentType: type,
+        upsert: false
+      }).then(function (up) {
+        if (up.error) throw up.error;
+        return window.LakeClub.registerKneeboardPhoto(window.LAKE_SB, logId, preparedPath, type);
+      }).then(function (reg) {
+        if (!reg || reg.ok === false) {
+          if (window.LakeClub.rollbackKneeboardPhotoUpload) {
+            window.LakeClub.rollbackKneeboardPhotoUpload(window.LAKE_SB, preparedPath).catch(function () {});
+          }
+          throw { code: (reg && reg.code) || "register", message: (reg && reg.error) || "Couldn\u2019t save that photo." };
+        }
+        rememberPhotoMeta(reg);
+        return reg;
+      });
+    }).catch(function (err) {
+      if (preparedPath && window.LakeClub && window.LakeClub.rollbackKneeboardPhotoUpload) {
+        window.LakeClub.rollbackKneeboardPhotoUpload(window.LAKE_SB, preparedPath).catch(function () {});
+      }
+      throw err;
+    });
+  }
+
+  function ensureHostedKneeboardLogForPhoto(sport, trickId, logId) {
+    var person = currentPerson();
+    var mid = memberIdFor(person);
+    var entry = ensureEntry(sport, trickId);
+    if (!Array.isArray(entry.remoteIds)) entry.remoteIds = [];
+    if (entry.remoteIds.indexOf(logId) === -1) {
+      entry.remoteIds.push(logId);
+      save(state);
+    }
+    var day = (entry.dates && entry.dates.length) ? entry.dates[entry.dates.length - 1] : todayISO();
+    return window.LakeClub.logKneeboard(window.LAKE_SB, {
+      id: logId,
+      memberId: mid,
+      trickName: trickNameOf(sport, trickId),
+      mode: modeOf(sport, trickId),
+      loggedAt: kneeboardLoggedAt(day)
+    }).then(function (res) {
+      if (res && res.ok === false) {
+        throw { code: res.code || "host", message: res.error || "Couldn\u2019t host that log." };
+      }
+      return logId;
+    });
+  }
+
+  function handleTrickPhotoFile(sport, trickId, file, btn, onSaved) {
+    if (!hostEnabled()) {
+      showToast("log", PHOTO_JOIN_TOAST);
+      return;
+    }
+    var person = currentPerson();
+    if (!canLogFor(person)) {
+      showToast("log", "You can only log your sets and your juniors.");
+      return;
+    }
+    var logId = (btn && btn.getAttribute("data-log-id")) || hostedLogIdForTrick(sport, trickId);
+    if (!isUuid(logId)) {
+      showToast("log", PHOTO_JOIN_TOAST);
+      return;
+    }
+    processPhotoFile(file).then(function (processed) {
+      return ensureHostedKneeboardLogForPhoto(sport, trickId, logId).then(function () {
+        return uploadProcessedPhoto(logId, processed);
+      });
+    }).then(function () {
+      setPhotoButtonState(btn, true);
+      showToast("log", "Photo shared with your club");
+      afterProgress({ hasMedia: true });
+      afterHostChange();
+      if (typeof onSaved === "function") onSaved(logId);
+    }).catch(function (err) {
+      var msg = (err && err.message) || "Couldn\u2019t save that photo.";
+      showToast("log", msg);
+    });
+  }
+
+  function photoLightboxFocusables() {
+    var dlg = document.getElementById("photo-lightbox");
+    if (!dlg) return [];
+    var nodes = dlg.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    var out = [];
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.hidden) continue;
+      if (n.closest && n.closest("[hidden]")) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function onPhotoLightboxKeydown(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closePhotoLightbox();
+      return;
+    }
+    if (e.key === "Tab") {
+      var focusables = photoLightboxFocusables();
+      if (!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  function resetPhotoLightboxConfirm() {
+    var confirmBlock = document.getElementById("photo-lightbox-confirm");
+    var actions = document.querySelector(".photo-lightbox-actions");
+    if (confirmBlock) confirmBlock.hidden = true;
+    if (actions && photoLightboxState.canEdit) actions.hidden = false;
+  }
+
+  function closePhotoLightbox() {
+    var dlg = document.getElementById("photo-lightbox");
+    var scrim = document.getElementById("photo-lightbox-scrim");
+    var img = document.getElementById("photo-lightbox-img");
+    if (dlg) dlg.hidden = true;
+    if (scrim) scrim.hidden = true;
+    if (img) {
+      img.removeAttribute("src");
+      img.alt = "";
+    }
+    photoLightboxState.url = "";
+    resetPhotoLightboxConfirm();
+    document.body.classList.remove("photo-lightbox-open");
+    document.removeEventListener("keydown", onPhotoLightboxKeydown, true);
+    var restore = photoLightboxLastFocus;
+    photoLightboxState = { logId: "", sport: "", trickId: "", btn: null, url: "", canEdit: false, objectPath: "" };
+    photoLightboxLastFocus = null;
+    if (restore && typeof restore.focus === "function") {
+      try { restore.focus(); } catch (err) {}
+    }
+  }
+
+  function openPhotoLightboxForLog(logId, triggerBtn, sport, trickId) {
+    if (!hostEnabled() || !window.LakeClub.viewKneeboardPhoto) {
+      showToast("log", PHOTO_JOIN_TOAST);
+      return;
+    }
+    if (!isUuid(logId)) {
+      showToast("log", "No photo saved yet.");
+      return;
+    }
+    window.LakeClub.viewKneeboardPhoto(window.LAKE_SB, logId).then(function (meta) {
+      if (!meta || meta.ok === false) {
+        showToast("log", (meta && meta.error) || "No photo saved yet.");
+        return null;
+      }
+      rememberPhotoMeta(meta);
+      return signedUrlForPath(meta.object_path).then(function (url) {
+        return { meta: meta, url: url };
+      });
+    }).then(function (pack) {
+      if (!pack) return;
+      var dlg = document.getElementById("photo-lightbox");
+      var scrim = document.getElementById("photo-lightbox-scrim");
+      var img = document.getElementById("photo-lightbox-img");
+      if (!dlg || !scrim || !img) return;
+      photoLightboxLastFocus = triggerBtn || document.activeElement;
+      photoLightboxState = {
+        logId: logId,
+        sport: sport || "",
+        trickId: trickId || "",
+        btn: triggerBtn || null,
+        url: pack.url,
+        canEdit: pack.meta.can_edit === true,
+        objectPath: pack.meta.object_path || ""
+      };
+      img.src = pack.url;
+      img.alt = (trickId ? trickNameOf(sport || "kneeboard", trickId) : "Trick") + " photo";
+      setLightboxEditControls(photoLightboxState.canEdit);
+      dlg.hidden = false;
+      scrim.hidden = false;
+      document.body.classList.add("photo-lightbox-open");
+      document.addEventListener("keydown", onPhotoLightboxKeydown, true);
+      var closeBtn = document.getElementById("photo-lightbox-close");
+      if (closeBtn && closeBtn.focus) closeBtn.focus();
+    }).catch(function () {
+      showToast("log", "Couldn\u2019t open that photo.");
+    });
+  }
+
+  function openPhotoLightbox(sport, trickId, triggerBtn) {
+    var logId = (triggerBtn && triggerBtn.getAttribute("data-log-id")) || hostedLogIdForTrick(sport, trickId);
+    openPhotoLightboxForLog(logId, triggerBtn, sport, trickId);
+  }
+
   /* ---- render ---- */
 
   var kbQuery = "";
@@ -1503,8 +1956,15 @@
     if (custom) html += '<span class="write-in">Write-in</span>';
     html += '<span class="kb-diff">' + d + "</span>";
     html += "</span></label></div>";
+    var sideHtml = "";
     if (custom) {
-      html += '<div class="trick-side"><button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button></div>';
+      sideHtml += '<button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button>';
+    }
+    if (landed && sport === "kneeboard") {
+      sideHtml += renderPhotoButton(sport, item.id, hostedLogIdForTrick(sport, item.id));
+    }
+    if (sideHtml) {
+      html += '<div class="trick-side">' + sideHtml + "</div>";
     }
     html += "</li>";
     return html;
@@ -1543,6 +2003,7 @@
     }
     list.innerHTML = html;
     updateProgress(sport);
+    fillTrickPhotos(sport);
   }
 
   function updateProgress(sport) {
@@ -2131,6 +2592,19 @@
       var fiveLabel = highFiveLabel(row.high_fives);
       if (fiveLabel) html += '<span class="highfive-count">' + escapeHtml(fiveLabel) + "</span>";
       html += "</button>";
+      if (kind === "kneeboard") {
+        var hasPhoto = !!(row.has_photo || row.photo_id || row.photo_path);
+        if (hasPhoto) {
+          rememberPhotoMeta({
+            id: row.photo_id,
+            kneeboard_log_id: row.id,
+            object_path: row.photo_path,
+            member_id: row.member_id,
+            can_edit: false
+          });
+          html += renderRecencyPhotoButton(row.id, true);
+        }
+      }
       html += "</div>";
       html += "</div>";
       if (open) {
@@ -2445,6 +2919,15 @@
         afterProgress({ hasMedia: true });
       });
     }
+
+    if (el.classList && el.classList.contains("trick-photo-input") && el.files && el.files[0]) {
+      var photoFile = el.files[0];
+      var photoWrap = el.closest(".trick-photo-wrap");
+      var photoBtn = photoWrap ? photoWrap.querySelector(".trick-photo-btn") : null;
+      handleTrickPhotoFile(sport, id, photoFile, photoBtn);
+      el.value = "";
+      return;
+    }
   });
 
   document.querySelector("main").addEventListener("click", function (e) {
@@ -2501,6 +2984,10 @@
         }).catch(function () {});
       return;
     }
+    if (act === "recency-photo") {
+      openPhotoLightboxForLog(btn.getAttribute("data-id"), btn, "kneeboard", "");
+      return;
+    }
     if (act === "delete-comment") {
       if (!hostEnabled() || !window.LakeClub.deleteComment) return;
       window.LakeClub.deleteComment(window.LAKE_SB, btn.getAttribute("data-id"))
@@ -2517,6 +3004,25 @@
     var sport = btn.getAttribute("data-sport");
     var id = btn.getAttribute("data-id");
     if (!sport || !id) return;
+
+    if (act === "photo") {
+      if (!hostEnabled()) {
+        showToast("log", PHOTO_JOIN_TOAST);
+        return;
+      }
+      if (btn.classList.contains("is-filled")) {
+        openPhotoLightbox(sport, id, btn);
+      } else {
+        if (!isUuid(btn.getAttribute("data-log-id") || hostedLogIdForTrick(sport, id))) {
+          showToast("log", PHOTO_JOIN_TOAST);
+          return;
+        }
+        var photoWrapC = btn.closest(".trick-photo-wrap");
+        var photoInputC = photoWrapC ? photoWrapC.querySelector(".trick-photo-input") : null;
+        if (photoInputC) photoInputC.click();
+      }
+      return;
+    }
 
     if (act === "mode") {
       var entry = ensureEntry(sport, id);
@@ -2670,6 +3176,83 @@
           if (field) field.value = "";
           loadRecency();
         }).catch(function () {});
+    });
+  }
+
+  var photoLightboxCloseBtn = document.getElementById("photo-lightbox-close");
+  if (photoLightboxCloseBtn) {
+    photoLightboxCloseBtn.addEventListener("click", function () { closePhotoLightbox(); });
+  }
+  var photoLightboxScrim = document.getElementById("photo-lightbox-scrim");
+  if (photoLightboxScrim) {
+    photoLightboxScrim.addEventListener("click", function () { closePhotoLightbox(); });
+  }
+  var photoLightboxRemoveBtn = document.getElementById("photo-lightbox-remove");
+  if (photoLightboxRemoveBtn) {
+    photoLightboxRemoveBtn.addEventListener("click", function () {
+      var confirmBlock = document.getElementById("photo-lightbox-confirm");
+      var actions = document.querySelector(".photo-lightbox-actions");
+      if (confirmBlock) confirmBlock.hidden = false;
+      if (actions) actions.hidden = true;
+    });
+  }
+  var photoLightboxConfirmCancelBtn = document.getElementById("photo-lightbox-confirm-cancel");
+  if (photoLightboxConfirmCancelBtn) {
+    photoLightboxConfirmCancelBtn.addEventListener("click", function () {
+      resetPhotoLightboxConfirm();
+    });
+  }
+  var photoLightboxConfirmRemoveBtn = document.getElementById("photo-lightbox-confirm-remove");
+  if (photoLightboxConfirmRemoveBtn) {
+    photoLightboxConfirmRemoveBtn.addEventListener("click", function () {
+      var logId = photoLightboxState.logId;
+      var btn = photoLightboxState.btn;
+      if (!isUuid(logId) || !hostEnabled() || !window.LakeClub.removeKneeboardPhoto) {
+        closePhotoLightbox();
+        return;
+      }
+      if (!photoLightboxState.canEdit) {
+        showToast("log", "Only the logger can remove this photo.");
+        return;
+      }
+      window.LakeClub.removeKneeboardPhoto(window.LAKE_SB, logId).then(function (res) {
+        if (res && res.ok === false) {
+          showToast("log", res.error || "Couldn\u2019t remove that photo.");
+          return;
+        }
+        clearPhotoMeta(logId);
+        setPhotoButtonState(btn, false);
+        closePhotoLightbox();
+        showToast("log", "Photo removed");
+        afterHostChange();
+      }).catch(function () {
+        showToast("log", "Couldn\u2019t remove that photo.");
+      });
+    });
+  }
+  var photoLightboxReplaceBtn = document.getElementById("photo-lightbox-replace");
+  var photoLightboxFileInput = document.getElementById("photo-lightbox-file");
+  if (photoLightboxReplaceBtn && photoLightboxFileInput) {
+    photoLightboxReplaceBtn.addEventListener("click", function () {
+      if (!photoLightboxState.canEdit) {
+        showToast("log", "Only the logger can replace this photo.");
+        return;
+      }
+      photoLightboxFileInput.click();
+    });
+    photoLightboxFileInput.addEventListener("change", function () {
+      var file = photoLightboxFileInput.files && photoLightboxFileInput.files[0];
+      photoLightboxFileInput.value = "";
+      if (!file) return;
+      var sport = photoLightboxState.sport || "kneeboard";
+      var id = photoLightboxState.trickId;
+      var btn = photoLightboxState.btn;
+      var logId = photoLightboxState.logId;
+      if (!isUuid(logId)) return;
+      if (btn && logId) btn.setAttribute("data-log-id", logId);
+      handleTrickPhotoFile(sport, id || "kb", file, btn, function () {
+        openPhotoLightboxForLog(logId, btn, sport, id);
+      });
     });
   }
 
