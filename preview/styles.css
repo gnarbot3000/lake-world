@@ -1222,10 +1222,28 @@ input:focus-visible {
 .recency-top .board-date { flex: 0 0 auto; text-align: right; }
 .recency-detail {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.3rem 0.65rem;
+  align-items: center;
+  gap: 0.5rem;
   min-width: 0;
+}
+.recency-facts {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.recency-facts > * { flex: 0 0 auto; }
+.recency-facts .recency-trick,
+.recency-facts .board-pass { flex: 0 1 auto; }
+.recency-acts {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.05rem;
+  margin-left: auto;
 }
 .recency-kind {
   font-size: 0.68rem;
@@ -1242,29 +1260,28 @@ input:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.recency-mode {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--mute);
-}
 .recency-row.is-you .recency-kind { color: var(--navy); }
 .recency-row .board-buoys,
-.recency-row .board-chart { text-align: left; }
+.recency-row .board-chart {
+  text-align: left;
+  font-size: 0.86rem;
+}
 
 .recency-social {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.22rem;
   margin-top: 0.05rem;
-  padding-top: 0.2rem;
+  padding-top: 0.28rem;
   border-top: 1px solid var(--line);
 }
-.highfive-btn {
+.highfive-btn,
+.comment-btn {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
-  align-self: flex-start;
+  justify-content: center;
+  gap: 0.24rem;
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1272,8 +1289,9 @@ input:focus-visible {
   background: transparent;
   border: 0;
   border-radius: 0;
-  min-height: 0;
-  padding: 0.05rem 0;
+  min-height: 40px;
+  min-width: 30px;
+  padding: 0.05rem 0.15rem;
   cursor: pointer;
 }
 .highfive-btn.is-on {
@@ -1281,7 +1299,13 @@ input:focus-visible {
   border: 0;
   color: #FC5200;
 }
-.highfive-icon {
+.comment-btn.is-on {
+  background: transparent;
+  border: 0;
+  color: #FC5200;
+}
+.highfive-icon,
+.comment-icon {
   display: block;
   flex: 0 0 auto;
   fill: none;
@@ -1294,7 +1318,8 @@ input:focus-visible {
   fill: currentColor;
   stroke: none;
 }
-.highfive-count {
+.highfive-count,
+.comment-count {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 0.78rem;
@@ -1350,8 +1375,8 @@ input:focus-visible {
   border: 0;
   border-bottom: 1px solid var(--line);
   border-radius: 0;
-  padding: 0.15rem 0;
-  min-height: 0;
+  padding: 0.35rem 0;
+  min-height: 36px;
   background: transparent;
   color: var(--ink);
 }
@@ -1372,8 +1397,8 @@ input:focus-visible {
   background: transparent;
   border: 0;
   border-radius: 0;
-  min-height: 0;
-  padding: 0.1rem 0;
+  min-height: 36px;
+  padding: 0.1rem 0.2rem;
   cursor: pointer;
 }
 

@@ -1209,6 +1209,7 @@
 
   var recencyRows = [];
   var recencyError = "";
+  var recencyOpen = {};
   var recencyTimer = null;
   var draftBuoys = null;
 
@@ -2034,6 +2035,31 @@
     return String(n);
   }
 
+  function commentIcon() {
+    return '<svg class="comment-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path d="M20.4 11.7c0 3.75-3.76 6.8-8.4 6.8-.86 0-1.7-.1-2.48-.3L4.9 19.9l1.42-3.55C4.85 15.1 3.6 13.5 3.6 11.7c0-3.75 3.76-6.8 8.4-6.8s8.4 3.05 8.4 6.8z"/>' +
+      "</svg>";
+  }
+
+  function recencyKey(kind, id) {
+    return String(kind || "") + ":" + String(id || "");
+  }
+
+  function focusRecencyComposer(kind, id) {
+    var list = document.getElementById("recency-list");
+    if (!list) return;
+    var forms = list.querySelectorAll(".comment-form");
+    var i;
+    for (i = 0; i < forms.length; i++) {
+      if (forms[i].getAttribute("data-kind") === String(kind || "") &&
+        forms[i].getAttribute("data-id") === String(id || "")) {
+        var field = forms[i].querySelector("input");
+        if (field && field.focus) field.focus();
+        return;
+      }
+    }
+  }
+
   function renderRecency() {
     var list = document.getElementById("recency-list");
     var empty = document.getElementById("recency-empty");
@@ -2077,17 +2103,27 @@
       }
       html += "</div>";
       html += '<div class="recency-detail">';
+      html += '<div class="recency-facts">';
       if (kind === "kneeboard") {
         html += '<span class="recency-kind">Kneeboard</span>';
         html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + "</span>";
-        html += '<span class="recency-mode">' + (row.mode === "hard" ? "hard log" : "easy unlock") + "</span>";
       } else {
         html += '<span class="recency-kind">Slalom</span>';
         html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + "</span>";
         html += '<span class="board-chart">Chart ' + escapeHtml(chartText(row)) + "</span>";
       }
       html += "</div>";
-      html += '<div class="recency-social">';
+      var comments = Array.isArray(row.comments) ? row.comments : [];
+      var open = !!recencyOpen[recencyKey(kind, row.id)];
+      html += '<div class="recency-acts">';
+      html += '<button type="button" class="comment-btn' + (open ? " is-on" : "") +
+        '" data-act="toggle-comments" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
+        '" aria-expanded="' + (open ? "true" : "false") + '" aria-label="Comments">';
+      html += commentIcon();
+      if (comments.length) {
+        html += '<span class="comment-count">' + escapeHtml(String(comments.length)) + "</span>";
+      }
+      html += "</button>";
       html += '<button type="button" class="highfive-btn' + (row.i_high_five ? " is-on" : "") +
         '" data-act="high-five" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
         '" aria-pressed="' + (row.i_high_five ? "true" : "false") + '" aria-label="High five">';
@@ -2095,27 +2131,32 @@
       var fiveLabel = highFiveLabel(row.high_fives);
       if (fiveLabel) html += '<span class="highfive-count">' + escapeHtml(fiveLabel) + "</span>";
       html += "</button>";
-      var comments = Array.isArray(row.comments) ? row.comments : [];
-      if (comments.length) {
-        html += '<ul class="comment-list">';
-        var c;
-        for (c = 0; c < comments.length; c++) {
-          var com = comments[c] || {};
-          html += '<li class="comment-item">';
-          html += '<span class="comment-author">' + escapeHtml(com.display_name || "Member") + "</span>";
-          html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
-          if (com.mine) {
-            html += '<button type="button" class="comment-delete" data-act="delete-comment" data-id="' +
-              escapeHtml(com.id || "") + '">Delete</button>';
+      html += "</div>";
+      html += "</div>";
+      if (open) {
+        html += '<div class="recency-social">';
+        if (comments.length) {
+          html += '<ul class="comment-list">';
+          var c;
+          for (c = 0; c < comments.length; c++) {
+            var com = comments[c] || {};
+            html += '<li class="comment-item">';
+            html += '<span class="comment-author">' + escapeHtml(com.display_name || "Member") + "</span>";
+            html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
+            if (com.mine) {
+              html += '<button type="button" class="comment-delete" data-act="delete-comment" data-id="' +
+                escapeHtml(com.id || "") + '">Delete</button>';
+            }
+            html += "</li>";
           }
-          html += "</li>";
+          html += "</ul>";
         }
-        html += "</ul>";
+        html += '<form class="comment-form" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") + '">';
+        html += '<input type="text" maxlength="280" placeholder="Add a comment…" aria-label="Add a comment" required>';
+        html += '<button type="submit">Post</button></form>';
+        html += "</div>";
       }
-      html += '<form class="comment-form" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") + '">';
-      html += '<input type="text" maxlength="280" placeholder="Add a comment…" aria-label="Add a comment" required>';
-      html += '<button type="submit">Post</button></form>';
-      html += "</div></li>";
+      html += "</li>";
     }
     list.innerHTML = html;
   }
@@ -2435,6 +2476,17 @@
     }
     if (act === "delete-set") {
       deleteSet(btn.getAttribute("data-id"));
+      return;
+    }
+    if (act === "toggle-comments") {
+      var cKind = btn.getAttribute("data-kind");
+      var cId = btn.getAttribute("data-id");
+      var cKey = recencyKey(cKind, cId);
+      var willOpen = !recencyOpen[cKey];
+      if (willOpen) recencyOpen[cKey] = true;
+      else delete recencyOpen[cKey];
+      renderRecency();
+      if (willOpen) focusRecencyComposer(cKind, cId);
       return;
     }
     if (act === "high-five") {
