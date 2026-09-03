@@ -79,6 +79,26 @@
     </footer>
   </div>
 
+
+  <div class="photo-lightbox-scrim" id="photo-lightbox-scrim" hidden></div>
+  <section class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Trick photo" hidden>
+    <div class="photo-lightbox-inner">
+      <button type="button" class="photo-lightbox-close" id="photo-lightbox-close">Close</button>
+      <img class="photo-lightbox-img" id="photo-lightbox-img" alt="">
+      <div class="photo-lightbox-actions" hidden>
+        <button type="button" class="photo-lightbox-replace" id="photo-lightbox-replace" hidden>Replace</button>
+        <button type="button" class="photo-lightbox-remove" id="photo-lightbox-remove">Remove photo</button>
+      </div>
+      <div class="photo-lightbox-confirm" id="photo-lightbox-confirm" hidden>
+        <p>Remove this club-shared photo?</p>
+        <div class="photo-lightbox-confirm-row">
+          <button type="button" class="photo-lightbox-confirm-cancel" id="photo-lightbox-confirm-cancel">Cancel</button>
+          <button type="button" class="photo-lightbox-confirm-remove" id="photo-lightbox-confirm-remove">Remove</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/config.js"></script>

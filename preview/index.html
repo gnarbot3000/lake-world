@@ -88,7 +88,8 @@
           <div class="lake-meter" aria-hidden="true"><span class="lake-fill"></span></div>
         </div>
         <form class="add-form kb-search" data-sport="kneeboard" autocomplete="off">
-          <label for="add-kneeboard">Search or log a trick</label>
+          <label for="add-kneeboard">Search or write in a trick</label>
+          <p class="kb-search-hint">Not listed? Type it and Log it.</p>
           <div class="add-row">
             <input id="add-kneeboard" name="name" type="search" maxlength="80" placeholder="Surface 360 left" enterkeyhint="go">
             <button type="submit" class="btn-primary">Log it</button>
@@ -235,6 +236,25 @@
       </form>
       <p class="legend">Juniors have no email. They wait for an admin to approve, then show in your skier list.</p>
       <div id="pending-juniors" hidden></div>
+    </div>
+  </section>
+  <div class="photo-lightbox-scrim" id="photo-lightbox-scrim" hidden></div>
+  <section class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Trick photo" hidden>
+    <div class="photo-lightbox-inner">
+      <button type="button" class="photo-lightbox-close" id="photo-lightbox-close">Close</button>
+      <img class="photo-lightbox-img" id="photo-lightbox-img" alt="">
+      <div class="photo-lightbox-actions">
+        <button type="button" class="photo-lightbox-replace" id="photo-lightbox-replace">Replace</button>
+        <button type="button" class="photo-lightbox-remove" id="photo-lightbox-remove">Remove photo</button>
+      </div>
+      <div class="photo-lightbox-confirm" id="photo-lightbox-confirm" hidden>
+        <p>Remove this photo? This cannot be undone.</p>
+        <div class="photo-lightbox-confirm-row">
+          <button type="button" class="photo-lightbox-confirm-cancel" id="photo-lightbox-confirm-cancel">Cancel</button>
+          <button type="button" class="photo-lightbox-confirm-remove" id="photo-lightbox-confirm-remove">Remove</button>
+        </div>
+      </div>
+      <input type="file" accept="image/*" id="photo-lightbox-file" hidden>
     </div>
   </section>
   <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>

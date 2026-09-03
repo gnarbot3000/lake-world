@@ -8,7 +8,7 @@ Brand is **lake.world** (not “Lake World”). Email/password on the splash (la
 - `preview/admin.html` — admins approve/deny join requests and add/remove admins.
 - `supabase/migrations/` — SQL for Darin to paste into the **lake.world** SQL editor. Do not run it against vinyl-archive.
 
-Membership is email join + pick a club + admin approve. Clubs: Ski Paradise Cleveland, Adams Lake, Ski Pond. joel.hageman@gmail.com is the temporary admin (and approved member Joel Hageman) on all three. Invite copy-links are leftover (old tokens still work on `invite.html`) and are not the join path. The hosted board does not seed the old 30-name list. Roster, admins, club recency, High fives, and comments live in lake.world Supabase. Guest Preview stays personal-only on this device.
+Membership is email join + pick a club + admin approve. Clubs: Ski Paradise Cleveland, Adams Lake, Ski Pond. joel.hageman@gmail.com is the temporary admin (and approved member Joel Hageman) on all three. Invite copy-links are leftover (old tokens still work on `invite.html`) and are not the join path. The hosted board does not seed the old 30-name list. Roster, admins, club recency, High fives, comments, and club-shared Kneeboard trick photos (private Storage bucket `kneeboard-photos`) live in lake.world Supabase. Guest Preview stays personal-only on this device.
 
 Domain sits at Squarespace. Registrar stays Squarespace. Separate from hibala.com.
 

@@ -1,6 +1,8 @@
 (function (w) {
   "use strict";
 
+  var PHOTO_BUCKET = "kneeboard-photos";
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -45,7 +47,37 @@
     return '<svg class="highfive-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8.1 10.4V6.2a1.35 1.35 0 0 1 2.7 0v4.2h.15V4.7a1.35 1.35 0 1 1 2.7 0v5.6h.15V5.5a1.35 1.35 0 1 1 2.7 0v6h.15V7.6a1.35 1.35 0 1 1 2.7 0V14c0 3.45-2.35 6.15-6.05 6.15-3.25 0-5.8-2.25-5.8-5.55v-1.15H7.2A1.85 1.85 0 0 1 5.35 12V9.3a1.35 1.35 0 0 1 2.7 0v1.1h.05z"/></svg>';
   }
 
+  function photoIconSvg(filled) {
+    if (filled) {
+      return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+        '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="#FFFFFF"/>' +
+        '<circle cx="12" cy="12.1" r="2.15" fill="var(--accent)"/>' +
+        "</svg>";
+    }
+    return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      '<circle cx="12" cy="12.1" r="2.15" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+      "</svg>";
+  }
+
+  function renderRecencyPhotoButton(logId) {
+    var logAttr = escapeHtml(logId || "");
+    return '<button type="button" class="recency-photo-btn is-filled" data-act="recency-photo" data-kind="kneeboard" data-id="' +
+      logAttr + '" aria-label="View trick photo">' +
+      '<span class="trick-photo-icon">' + photoIconSvg(true) + "</span>" +
+      "</button>";
+  }
+
   function key(kind, id) { return String(kind) + ":" + String(id); }
+
+  function toast(msg) {
+    var el = document.getElementById("app-toast");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.add("is-on");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("is-on"); }, 2200);
+  }
 
   function ClubLogs(options) {
     this.sb = options.sb;
@@ -53,6 +85,8 @@
     this.showError = options.showError || function () {};
     this.rows = [];
     this.open = {};
+    this._photoState = { logId: "", canEdit: false, lastFocus: null };
+    this._lightboxBound = false;
   }
 
   ClubLogs.prototype.setClub = function (sb, clubId) {
@@ -65,6 +99,137 @@
     var form = document.querySelector('.comment-form[data-kind="' + kind + '"][data-id="' + id + '"]');
     var input = form && form.querySelector("input");
     if (input && input.focus) input.focus();
+  };
+
+  ClubLogs.prototype.bindLightbox = function () {
+    var self = this;
+    if (this._lightboxBound) return;
+    this._lightboxBound = true;
+    var closeBtn = document.getElementById("photo-lightbox-close");
+    var scrim = document.getElementById("photo-lightbox-scrim");
+    var removeBtn = document.getElementById("photo-lightbox-remove");
+    var confirmCancel = document.getElementById("photo-lightbox-confirm-cancel");
+    var confirmRemove = document.getElementById("photo-lightbox-confirm-remove");
+    if (closeBtn) closeBtn.addEventListener("click", function () { self.closePhoto(); });
+    if (scrim) scrim.addEventListener("click", function () { self.closePhoto(); });
+    if (removeBtn) {
+      removeBtn.addEventListener("click", function () {
+        var confirmBlock = document.getElementById("photo-lightbox-confirm");
+        var actions = document.querySelector(".photo-lightbox-actions");
+        if (confirmBlock) confirmBlock.hidden = false;
+        if (actions) actions.hidden = true;
+      });
+    }
+    if (confirmCancel) {
+      confirmCancel.addEventListener("click", function () {
+        var confirmBlock = document.getElementById("photo-lightbox-confirm");
+        var actions = document.querySelector(".photo-lightbox-actions");
+        if (confirmBlock) confirmBlock.hidden = true;
+        if (actions && self._photoState.canEdit) actions.hidden = false;
+      });
+    }
+    if (confirmRemove) {
+      confirmRemove.addEventListener("click", function () {
+        var logId = self._photoState.logId;
+        if (!logId || !self.sb || !w.LakeClub || !w.LakeClub.removeKneeboardPhoto) {
+          self.closePhoto();
+          return;
+        }
+        if (!self._photoState.canEdit) {
+          toast("Only the logger can remove this photo.");
+          return;
+        }
+        w.LakeClub.removeKneeboardPhoto(self.sb, logId).then(function (res) {
+          if (res && res.ok === false) {
+            self.showError(res.error || "Couldn’t remove that photo.");
+            return;
+          }
+          self.closePhoto();
+          toast("Photo removed");
+          self.load();
+        }).catch(function () {
+          self.showError("Couldn’t remove that photo.");
+        });
+      });
+    }
+  };
+
+  ClubLogs.prototype.closePhoto = function () {
+    var dlg = document.getElementById("photo-lightbox");
+    var scrim = document.getElementById("photo-lightbox-scrim");
+    var img = document.getElementById("photo-lightbox-img");
+    var confirmBlock = document.getElementById("photo-lightbox-confirm");
+    var actions = document.querySelector(".photo-lightbox-actions");
+    if (dlg) dlg.hidden = true;
+    if (scrim) scrim.hidden = true;
+    if (img) {
+      img.removeAttribute("src");
+      img.alt = "";
+    }
+    if (confirmBlock) confirmBlock.hidden = true;
+    if (actions) actions.hidden = true;
+    document.body.classList.remove("photo-lightbox-open");
+    document.removeEventListener("keydown", this._onPhotoKey, true);
+    var restore = this._photoState.lastFocus;
+    this._photoState = { logId: "", canEdit: false, lastFocus: null };
+    if (restore && typeof restore.focus === "function") {
+      try { restore.focus(); } catch (err) {}
+    }
+  };
+
+  ClubLogs.prototype.openPhoto = function (logId, triggerBtn) {
+    var self = this;
+    this.bindLightbox();
+    if (!this.sb || !w.LakeClub || !w.LakeClub.viewKneeboardPhoto) {
+      this.showError("Couldn’t open that photo.");
+      return;
+    }
+    w.LakeClub.viewKneeboardPhoto(this.sb, logId).then(function (meta) {
+      if (!meta || meta.ok === false) {
+        self.showError((meta && meta.error) || "No photo saved yet.");
+        return null;
+      }
+      return self.sb.storage.from(PHOTO_BUCKET).createSignedUrl(meta.object_path, 120).then(function (res) {
+        if (res.error || !res.data || !res.data.signedUrl) throw res.error || new Error("signed url failed");
+        return { meta: meta, url: res.data.signedUrl };
+      });
+    }).then(function (pack) {
+      if (!pack) return;
+      var dlg = document.getElementById("photo-lightbox");
+      var scrim = document.getElementById("photo-lightbox-scrim");
+      var img = document.getElementById("photo-lightbox-img");
+      var actions = document.querySelector(".photo-lightbox-actions");
+      var replaceBtn = document.getElementById("photo-lightbox-replace");
+      var confirmBlock = document.getElementById("photo-lightbox-confirm");
+      if (!dlg || !scrim || !img) {
+        self.showError("Photo viewer is not available on this page.");
+        return;
+      }
+      self._photoState = {
+        logId: logId,
+        canEdit: pack.meta.can_edit === true,
+        lastFocus: triggerBtn || document.activeElement
+      };
+      img.src = pack.url;
+      img.alt = (pack.meta.trick_name || "Trick") + " photo";
+      if (confirmBlock) confirmBlock.hidden = true;
+      if (actions) actions.hidden = !self._photoState.canEdit;
+      if (replaceBtn) replaceBtn.hidden = true;
+      dlg.hidden = false;
+      scrim.hidden = false;
+      document.body.classList.add("photo-lightbox-open");
+      self._onPhotoKey = function (e) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          self.closePhoto();
+        }
+      };
+      document.addEventListener("keydown", self._onPhotoKey, true);
+      var closeBtn = document.getElementById("photo-lightbox-close");
+      if (closeBtn && closeBtn.focus) closeBtn.focus();
+    }).catch(function () {
+      self.showError("Couldn’t open that photo.");
+    });
   };
 
   ClubLogs.prototype.rowHtml = function (row) {
@@ -82,7 +247,11 @@
     if (comments.length) html += '<span class="comment-count">' + comments.length + '</span>';
     html += '</button><button type="button" class="highfive-btn' + (row.i_high_five ? ' is-on' : '') + '" data-act="high-five" data-kind="' + kind + '" data-id="' + escapeHtml(row.id) + '" aria-pressed="' + !!row.i_high_five + '" aria-label="High five">' + highFiveIcon();
     if (Number(row.high_fives) > 0) html += '<span class="highfive-count">' + Number(row.high_fives) + '</span>';
-    html += '</button></div></div>';
+    html += '</button>';
+    if (kind === "kneeboard" && (row.has_photo || row.photo_id || row.photo_path)) {
+      html += renderRecencyPhotoButton(row.id);
+    }
+    html += '</div></div>';
     if (isOpen) {
       html += '<div class="recency-social">';
       if (comments.length) {
@@ -145,6 +314,10 @@
       w.LakeClub.toggleHighFive(this.sb, kind, id, this.clubId).then(function (result) {
         if (result && result.ok === false) self.showError(result.error); else self.load();
       });
+      return true;
+    }
+    if (act === "recency-photo") {
+      this.openPhoto(id, button);
       return true;
     }
     if (act === "delete-comment") {
