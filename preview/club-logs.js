@@ -16,8 +16,12 @@
       .replace(/"/g, "&quot;");
   }
 
+  function displayNameOnly(row) {
+    return (row && row.display_name) || "Member";
+  }
+
   function recencyName(row) {
-    var name = (row && row.display_name) || "Member";
+    var name = displayNameOnly(row);
     return row && row.is_junior && name.indexOf("(junior)") === -1 ? name + " (junior)" : name;
   }
 
@@ -48,7 +52,7 @@
   }
 
   function passLabel(row) {
-    return String(Number(row.buoys)) + " · " + row.off + " off · " + row.mph + " mph";
+    return String(Number(row.buoys)) + " @ " + row.off + " off · " + row.mph + " mph";
   }
 
   function chartScore(row) {
@@ -84,6 +88,22 @@
       '<path d="M8.6 7.4h1.05l.72-1.2h3.26l.72 1.2h1.05A1.75 1.75 0 0 1 17 9.15v5.9A1.75 1.75 0 0 1 15.25 16.8H8.75A1.75 1.75 0 0 1 7 15.05v-5.9A1.75 1.75 0 0 1 8.6 7.4Z" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
       '<circle cx="12" cy="12.1" r="2.15" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
       "</svg>";
+  }
+
+
+  function sportIcon(kind) {
+    if (kind === "kneeboard") {
+      return '<svg class="recency-sport-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">' +
+        '<ellipse cx="12" cy="12" rx="9.2" ry="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M5.2 12c1.6-1.35 4.2-2.15 6.8-2.15S17.2 10.65 18.8 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
+        '<circle cx="12" cy="12" r="1.15" fill="currentColor"/>' +
+        '</svg>';
+    }
+    return '<svg class="recency-sport-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">' +
+      '<path d="M3.4 16.2c2.8-1.1 5.1-4.2 7.2-7.4 1.1-1.7 2.5-3.2 4.1-3.9 1.1-.45 2.2-.35 3.1.35" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+      '<path d="M4.2 17.4c3.4-.35 6.6-1.55 9.3-3.35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<path d="M15.8 5.7l3.9 1.1-1.55 2.85" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
   }
 
   function renderRecencyPhotoButton(logId) {
@@ -285,8 +305,9 @@
     var kind = row.kind === "kneeboard" ? "kneeboard" : "slalom";
     var comments = Array.isArray(row.comments) ? row.comments : [];
     var isOpen = !!this.open[key(kind, row.id)];
-    var html = '<li class="board-row recency-row"><div class="recency-top">';
-    html += '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span>';
+    var html = '<li class="board-row recency-row is-' + kind + '"><div class="recency-top">';
+    html += '<span class="recency-name-wrap">' + sportIcon(kind) +
+      '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span></span>';
     html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + '</span></div>';
     html += '<div class="recency-detail"><div class="recency-facts">';
     if (kind === "kneeboard") html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + '</span>';
@@ -329,7 +350,7 @@
       if (!prev || score > prev.score || (score === prev.score && new Date(row.logged_at) > new Date(prev.logged_at))) {
         best[row.member_id] = {
           member_id: row.member_id,
-          display_name: recencyName(row),
+          display_name: displayNameOnly(row),
           score: score,
           chart: chartText(row),
           pass: passLabel(row),
@@ -354,7 +375,7 @@
       if (!entry) {
         entry = {
           member_id: row.member_id,
-          display_name: recencyName(row),
+          display_name: displayNameOnly(row),
           tricks: {},
           count: 0,
           logged_at: row.logged_at
@@ -368,7 +389,7 @@
       }
       if (new Date(row.logged_at) > new Date(entry.logged_at)) {
         entry.logged_at = row.logged_at;
-        entry.display_name = recencyName(row);
+        entry.display_name = displayNameOnly(row);
       }
     }
     return Object.keys(map).map(function (id) { return map[id]; }).sort(function (a, b) {
