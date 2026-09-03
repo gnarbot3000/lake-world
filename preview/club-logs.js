@@ -22,8 +22,7 @@
   }
 
   function recencyName(row) {
-    var name = displayNameOnly(row);
-    return row && row.is_junior && name.indexOf("(junior)") === -1 ? name + " (junior)" : name;
+    return displayNameOnly(row);
   }
 
   /* Same prettyDateTime style as Mini Slalom history (month day, h:mm AM/PM). */
