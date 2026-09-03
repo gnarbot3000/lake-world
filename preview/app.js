@@ -830,6 +830,88 @@
     return max || null;
   }
 
+  function addMonthsISO(iso, months) {
+    var p = (iso || "").split("-");
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10);
+    var day = parseInt(p[2], 10);
+    if (!y || !m || !day) return iso;
+    var idx = y * 12 + (m - 1) + months;
+    var ny = Math.floor(idx / 12);
+    var nm = idx - ny * 12 + 1;
+    var dim = new Date(ny, nm, 0).getDate();
+    var nd = day > dim ? dim : day;
+    return ny + "-" + padNum(nm) + "-" + padNum(nd);
+  }
+
+  function skierDayDates(person) {
+    var seen = {};
+    var out = [];
+    var sets = (person && person.slalomSets) || [];
+    var i;
+    for (i = 0; i < sets.length; i++) {
+      var d = sets[i].date;
+      if (d && !seen[d]) {
+        seen[d] = true;
+        out.push(d);
+      }
+    }
+    return out;
+  }
+
+  function latestSkierDate(person) {
+    var dates = skierDayDates(person);
+    var max = "";
+    var i;
+    for (i = 0; i < dates.length; i++) {
+      if (dates[i] > max) max = dates[i];
+    }
+    return max || null;
+  }
+
+  function priorDayCharts(person, beforeDate) {
+    if (!person || !beforeDate) return [];
+    var start = addMonthsISO(beforeDate, -12);
+    var dates = skierDayDates(person);
+    var charts = [];
+    var i;
+    for (i = 0; i < dates.length; i++) {
+      var d = dates[i];
+      if (d >= start && d < beforeDate) {
+        var best = bestSetOnDate(person, d);
+        if (best) charts.push(chartScore(best));
+      }
+    }
+    charts.sort(function (a, b) {
+      return b - a;
+    });
+    return charts;
+  }
+
+  function twoBestAverage(person, beforeDate) {
+    var charts = priorDayCharts(person, beforeDate);
+    if (charts.length < 2) return null;
+    return (charts[0] + charts[1]) / 2;
+  }
+
+  function formatDelta(n) {
+    if (typeof n !== "number" || isNaN(n)) return "—";
+    var rounded = Math.round(n * 10) / 10;
+    if (rounded === 0) return "0";
+    var abs = Math.abs(rounded);
+    var text = abs % 1 === 0 ? String(abs) : abs.toFixed(1);
+    return (rounded > 0 ? "+" : "\u2212") + text;
+  }
+
+  function deltaVsDate(person, date) {
+    if (!person || !date) return null;
+    var avg = twoBestAverage(person, date);
+    if (avg == null) return null;
+    var best = bestSetOnDate(person, date);
+    if (!best) return null;
+    return chartScore(best) - avg;
+  }
+
   function computeSlalomScore() {
     var best = bestSet();
     return best ? best.buoys : 0;
@@ -1654,6 +1736,7 @@
     var recency = document.getElementById("recency-board");
     var session = document.getElementById("latest-session");
     var club = document.getElementById("club-board");
+    var beat = document.getElementById("beat-board");
     var best = document.getElementById("best-board");
     var junior = document.getElementById("junior-block");
     var footer = document.querySelector("footer p");
@@ -1662,6 +1745,7 @@
     if (recency) recency.hidden = !vis;
     if (session) session.hidden = !vis;
     if (club) club.hidden = !vis;
+    if (beat) beat.hidden = !vis;
     if (best) best.hidden = !vis;
     if (junior) junior.hidden = true;
     if (kicker) kicker.textContent = CLUB;
@@ -1752,11 +1836,14 @@
     for (i = 0; i < rows.length; i++) {
       var r = rows[i];
       var you = r.person.id === curId;
+      var delta = deltaVsDate(r.person, date);
+      var deltaClass = "board-delta" + (delta != null && delta > 0 ? " is-up" : "");
       html += '<li class="board-row' + (you ? " is-you" : "") + '">';
       html += '<div class="session-cols">';
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
       html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      html += '<span class="' + deltaClass + '">' + escapeHtml(formatDelta(delta)) + "</span>";
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -1805,6 +1892,75 @@
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.set.date)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
       html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      html += "</div></li>";
+    }
+    list.innerHTML = html;
+  }
+
+  function renderBeatAverage() {
+    var list = document.getElementById("beat-list");
+    var empty = document.getElementById("beat-empty");
+    var head = document.getElementById("beat-head");
+    if (!list) return;
+    if (!clubVisible()) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = true;
+      if (head) head.hidden = true;
+      return;
+    }
+    var people = clubPeople();
+    var rows = [];
+    var i;
+    for (i = 0; i < people.length; i++) {
+      var latest = latestSkierDate(people[i]);
+      if (!latest) continue;
+      var set = bestSetOnDate(people[i], latest);
+      if (!set) continue;
+      var delta = deltaVsDate(people[i], latest);
+      rows.push({ person: people[i], set: set, date: latest, delta: delta });
+    }
+    rows.sort(function (a, b) {
+      var ae = a.delta != null;
+      var be = b.delta != null;
+      if (ae && !be) return -1;
+      if (!ae && be) return 1;
+      if (ae && be && a.delta !== b.delta) return b.delta - a.delta;
+      if (ae && be) return compareSetsDesc(a.set, b.set);
+      var an = displayName(a.person);
+      var bn = displayName(b.person);
+      if (an < bn) return -1;
+      if (an > bn) return 1;
+      return 0;
+    });
+    if (!rows.length) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = false;
+      if (head) head.hidden = true;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    if (head) head.hidden = false;
+    var curId = currentPerson().id;
+    var html = "";
+    var rank = 0;
+    for (i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var you = r.person.id === curId;
+      var eligible = r.delta != null;
+      if (eligible) rank += 1;
+      var first = eligible && rank === 1;
+      html += '<li class="board-row' + (you ? " is-you" : "") + (first ? " is-first" : "") + '">';
+      html += '<div class="beat-cols">';
+      html += '<span class="board-rank">' + (eligible ? String(rank) : "—") + "</span>";
+      html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
+      html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.date)) + "</span>";
+      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      if (eligible) {
+        html += '<span class="board-delta' + (r.delta > 0 ? " is-up" : "") + '">' +
+          escapeHtml(formatDelta(r.delta)) + "</span>";
+      } else {
+        html += '<span class="board-delta board-need">Need 2 days</span>';
+      }
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -1958,6 +2114,7 @@
     renderRecency();
     renderSession();
     renderClubBoard();
+    renderBeatAverage();
     renderBest10();
   }
 

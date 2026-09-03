@@ -122,7 +122,7 @@
           <h2 class="board-title" id="latest-session-heading">Latest session</h2>
           <div class="board-table">
             <div class="board-head session-head" id="session-head" hidden>
-              <span>Skier</span><span>Pass</span><span>Chart</span>
+              <span>Skier</span><span>Pass</span><span>Chart</span><span>vs avg</span>
             </div>
             <ul class="board-list" id="session-list"></ul>
           </div>
@@ -145,6 +145,18 @@
             <ul class="board-list" id="club-list"></ul>
           </div>
           <p class="shelf-empty" id="club-empty">Log a set to open the board.</p>
+        </div>
+
+        <div class="board-block" id="beat-board">
+          <h2 class="board-title">Beat average</h2>
+          <p class="board-kicker">Vs your best two</p>
+          <div class="board-table">
+            <div class="board-head beat-head" id="beat-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Chart</span><span>vs avg</span>
+            </div>
+            <ul class="board-list" id="beat-list"></ul>
+          </div>
+          <p class="shelf-empty" id="beat-empty">Need two earlier days, then the latest set ranks against that average.</p>
         </div>
 
         <div class="board-block" id="best-board">
@@ -205,6 +217,8 @@
       <p class="faq-a">Pick line, speed, and buoy count, then Submit this set’s best run.</p>
       <p class="faq-q">How does Chart rank work?</p>
       <p class="faq-a">Faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph). After 36 mph, more off is harder, then buoys.</p>
+      <p class="faq-q">How does Beat average work?</p>
+      <p class="faq-a">Latest day versus the average of your two best Charts in the last 12 months (not counting today). Whoever beats their own average by more ranks higher. Chart board stays raw ability.</p>
     </div>
     <div class="settings-section club-tools" id="club-tools" hidden>
       <form class="add-skier-form" id="create-invite-form" autocomplete="off">

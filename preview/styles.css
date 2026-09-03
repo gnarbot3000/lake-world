@@ -1069,7 +1069,8 @@ input:focus-visible {
 
 .board-head,
 .session-cols,
-.club-cols {
+.club-cols,
+.beat-cols {
   display: grid;
   gap: 0.25rem;
   align-items: center;
@@ -1078,12 +1079,17 @@ input:focus-visible {
 
 .session-head,
 .session-cols {
-  grid-template-columns: 1.15fr minmax(0, 1.7fr) 3.1rem;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.5fr) 3.1rem 3.4rem;
 }
 
 .club-head,
 .club-cols {
   grid-template-columns: 1.5rem minmax(0, 1.05fr) 3.2rem minmax(0, 1.45fr) 3.1rem;
+}
+
+.beat-head,
+.beat-cols {
+  grid-template-columns: 1.5rem minmax(0, 1.1fr) 3.2rem 3.1rem minmax(3.6rem, 0.9fr);
 }
 
 .board-head {
@@ -1124,7 +1130,9 @@ input:focus-visible {
 .board-row.is-first:not(.is-you) .board-speed,
 .board-row.is-first:not(.is-you) .board-rank,
 .board-row.is-first:not(.is-you) .board-chart,
-.board-row.is-first:not(.is-you) .board-pass {
+.board-row.is-first:not(.is-you) .board-pass,
+.board-row.is-first:not(.is-you) .board-delta,
+.board-row.is-first:not(.is-you) .board-need {
   color: var(--on-navy);
 }
 
@@ -1162,6 +1170,27 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.board-delta {
+  font-weight: 800;
+  font-size: 0.92rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.board-delta.is-up {
+  color: var(--accent);
+}
+
+.board-need {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--mute);
+  text-align: right;
+  white-space: nowrap;
+}
+
 .board-pass {
   font-size: 0.78rem;
   font-weight: 600;
@@ -1173,7 +1202,8 @@ input:focus-visible {
 }
 
 .session-cols,
-.club-cols { width: 100%; min-width: 0; }
+.club-cols,
+.beat-cols { width: 100%; min-width: 0; }
 
 .recency-row {
   flex-direction: column;
