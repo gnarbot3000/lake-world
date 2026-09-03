@@ -25,7 +25,11 @@
     bad_set: "That slalom set is not valid.",
     bad_trick: "That kneeboard trick is not valid.",
     bad_comment: "Type a short comment (280 characters or fewer).",
-    not_your_comment: "You can only delete your own comment."
+    not_your_comment: "You can only delete your own comment.",
+    bad_path: "That photo path is not valid.",
+    bad_type: "That photo type is not allowed.",
+    missing_object: "That photo did not finish uploading.",
+    registered: "That photo is already registered."
   };
 
   function emptyState(status) {
@@ -281,6 +285,34 @@
 
     deleteComment: function (sb, id) {
       return rpc(sb, "delete_log_comment", { p_id: id });
+    },
+
+    prepareKneeboardPhoto: function (sb, logId) {
+      return rpc(sb, "prepare_kneeboard_photo", { p_kneeboard_log_id: logId });
+    },
+
+    registerKneeboardPhoto: function (sb, logId, objectPath, contentType) {
+      return rpc(sb, "register_kneeboard_photo", {
+        p_kneeboard_log_id: logId,
+        p_object_path: objectPath,
+        p_content_type: contentType || "image/webp"
+      });
+    },
+
+    viewKneeboardPhoto: function (sb, logId) {
+      return rpc(sb, "view_kneeboard_photo", { p_kneeboard_log_id: logId });
+    },
+
+    removeKneeboardPhoto: function (sb, logId) {
+      return rpc(sb, "remove_kneeboard_photo", { p_kneeboard_log_id: logId });
+    },
+
+    rollbackKneeboardPhotoUpload: function (sb, objectPath) {
+      return rpc(sb, "rollback_kneeboard_photo_upload", { p_object_path: objectPath });
+    },
+
+    kneeboardPhotosForLogs: function (sb, ids) {
+      return rpc(sb, "kneeboard_photos_for_logs", { p_ids: ids || [] });
     },
 
     refresh: function (sb, clubId) {

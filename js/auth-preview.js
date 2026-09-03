@@ -20,10 +20,8 @@
   }
 
   function loadApp() {
-    loadScript("photos.js", function () {
-      loadScript("app.js", function () {
-        loadScript("club-ui.js");
-      });
+    loadScript("app.js", function () {
+      loadScript("club-ui.js");
     });
   }
 

@@ -1278,7 +1278,8 @@ input:focus-visible {
   border-top: 1px solid var(--line);
 }
 .highfive-btn,
-.comment-btn {
+.comment-btn,
+.recency-photo-btn {
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -1295,6 +1296,19 @@ input:focus-visible {
   min-width: 30px;
   padding: 0.05rem 0.15rem;
   cursor: pointer;
+}
+
+.recency-photo-btn.is-filled {
+  color: #FFFFFF;
+  background: var(--accent);
+  border-radius: 8px;
+  min-width: 34px;
+  padding: 0.1rem 0.25rem;
+}
+.recency-photo-btn .trick-photo-icon {
+  display: grid;
+  place-content: center;
+  line-height: 0;
 }
 .highfive-btn.is-on {
   background: transparent;
@@ -1709,7 +1723,7 @@ body.settings-open { overflow: hidden; }
 }
 #club-select[hidden] { display: none; }
 
-/* ---- kneeboard trick photo icon (personal, device-local) ---- */
+/* ---- kneeboard trick photo icon (club-shared, private storage) ---- */
 .trick-photo-wrap {
   display: flex;
 }
