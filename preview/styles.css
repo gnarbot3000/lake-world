@@ -698,13 +698,6 @@ input[type="date"] {
 }
 .best-chart[hidden] { display: none; }
 
-.chart-preview {
-  margin: 0.55rem 0 0;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--navy);
-}
-
 .buoy-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

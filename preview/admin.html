@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FBFDFF">
-  <title>lake.world admin</title>
+  <title>lake.world club</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <script src="../js/ga.js"></script>
@@ -36,13 +36,25 @@
     <main>
       <p class="club-error" id="admin-error" hidden></p>
       <section class="gate-card" id="admin-gate" hidden>
-        <h1 class="gate-title">Club admin</h1>
-        <p class="legend" id="admin-gate-copy">Sign in from lake.world to manage a club.</p>
+        <h1 class="gate-title">Club</h1>
+        <p class="legend" id="admin-gate-copy">Sign in from lake.world to open your club.</p>
         <a class="preview-nav" href="../index.html">Sign in</a>
       </section>
       <div id="admin-app" hidden>
         <h1 class="gate-title" id="admin-club-title">Ski Paradise Cleveland</h1>
         <p class="legend" id="admin-role"></p>
+
+        <section class="board-block club-log-section" id="slalom-logs-section">
+          <h2 class="board-title">Slalom</h2>
+          <ul class="board-list" id="slalom-logs-list"></ul>
+          <p class="shelf-empty" id="slalom-logs-empty">No Slalom logs yet.</p>
+        </section>
+
+        <section class="board-block club-log-section" id="kneeboard-logs-section">
+          <h2 class="board-title">Kneeboard</h2>
+          <ul class="board-list" id="kneeboard-logs-list"></ul>
+          <p class="shelf-empty" id="kneeboard-logs-empty">No Kneeboard logs yet.</p>
+        </section>
 
         <section class="board-block" id="pending-section" hidden>
           <h2 class="board-title">Pending</h2>
@@ -50,7 +62,7 @@
           <p class="shelf-empty" id="pending-empty">No one waiting.</p>
         </section>
 
-        <section class="board-block" id="members-section">
+        <section class="board-block" id="members-section" hidden>
           <h2 class="board-title">Members</h2>
           <ul class="admin-list" id="members-list"></ul>
           <p class="shelf-empty" id="members-empty">No approved members yet.</p>
@@ -67,10 +79,31 @@
     </footer>
   </div>
 
+
+  <div class="photo-lightbox-scrim" id="photo-lightbox-scrim" hidden></div>
+  <section class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Trick photo" hidden>
+    <div class="photo-lightbox-inner">
+      <button type="button" class="photo-lightbox-close" id="photo-lightbox-close">Close</button>
+      <img class="photo-lightbox-img" id="photo-lightbox-img" alt="">
+      <div class="photo-lightbox-actions" hidden>
+        <button type="button" class="photo-lightbox-replace" id="photo-lightbox-replace" hidden>Replace</button>
+        <button type="button" class="photo-lightbox-remove" id="photo-lightbox-remove">Remove photo</button>
+      </div>
+      <div class="photo-lightbox-confirm" id="photo-lightbox-confirm" hidden>
+        <p>Remove this club-shared photo?</p>
+        <div class="photo-lightbox-confirm-row">
+          <button type="button" class="photo-lightbox-confirm-cancel" id="photo-lightbox-confirm-cancel">Cancel</button>
+          <button type="button" class="photo-lightbox-confirm-remove" id="photo-lightbox-confirm-remove">Remove</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/config.js"></script>
   <script src="../js/club.js"></script>
+  <script src="club-logs.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

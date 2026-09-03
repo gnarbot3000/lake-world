@@ -239,12 +239,13 @@
         p_member_id: row.memberId,
         p_off: row.off,
         p_mph: row.mph,
-        p_buoys: row.buoys
+        p_buoys: row.buoys,
+        p_club_id: row.clubId || readSavedClubId()
       });
     },
 
-    deleteSlalom: function (sb, id) {
-      return rpc(sb, "delete_slalom_log", { p_id: id });
+    deleteSlalom: function (sb, id, clubId) {
+      return rpc(sb, "delete_slalom_log", { p_id: id, p_club_id: clubId || readSavedClubId() });
     },
 
     logKneeboard: function (sb, row) {
@@ -253,38 +254,41 @@
         p_member_id: row.memberId,
         p_logged_at: row.loggedAt || null,
         p_trick_name: row.trickName,
-        p_mode: row.mode
+        p_mode: row.mode,
+        p_club_id: row.clubId || readSavedClubId()
       });
     },
 
-    deleteKneeboard: function (sb, id) {
-      return rpc(sb, "delete_kneeboard_log", { p_id: id });
+    deleteKneeboard: function (sb, id, clubId) {
+      return rpc(sb, "delete_kneeboard_log", { p_id: id, p_club_id: clubId || readSavedClubId() });
     },
 
-    recency: function (sb) {
+    recency: function (sb, selectedClubId) {
       var args = { p_limit: 50 };
-      var clubId = readSavedClubId();
+      var clubId = selectedClubId || readSavedClubId();
       if (clubId) args.p_club_id = clubId;
-      return rpc(sb, "club_recency", args);
+      return rpc(sb, "club_sport_recency", args);
     },
 
-    toggleHighFive: function (sb, kind, logId) {
+    toggleHighFive: function (sb, kind, logId, clubId) {
       return rpc(sb, "toggle_log_high_five", {
         p_kind: kind,
-        p_log_id: logId
+        p_log_id: logId,
+        p_club_id: clubId || readSavedClubId()
       });
     },
 
-    addComment: function (sb, kind, logId, body) {
+    addComment: function (sb, kind, logId, body, clubId) {
       return rpc(sb, "add_log_comment", {
         p_kind: kind,
         p_log_id: logId,
-        p_body: body
+        p_body: body,
+        p_club_id: clubId || readSavedClubId()
       });
     },
 
-    deleteComment: function (sb, id) {
-      return rpc(sb, "delete_log_comment", { p_id: id });
+    deleteComment: function (sb, id, clubId) {
+      return rpc(sb, "delete_log_comment", { p_id: id, p_club_id: clubId || readSavedClubId() });
     },
 
     prepareKneeboardPhoto: function (sb, logId) {

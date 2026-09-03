@@ -1216,10 +1216,6 @@
   ensureSeedSkiers();
   syncClubPeople();
 
-  var recencyRows = [];
-  var recencyError = "";
-  var recencyOpen = {};
-  var recencyTimer = null;
   var draftBuoys = null;
 
   /* ---- IndexedDB media (file:// safe: no modules, no server fetch) ---- */
@@ -1471,6 +1467,10 @@
     delete photoMetaByLogId[String(logId)];
   }
 
+  // Personal Mini no longer refreshes a Recent logs board; Club page owns activity.
+  function afterHostChange() {}
+
+
   function photoIconSvg(filled) {
     if (filled) {
       return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
@@ -1495,15 +1495,6 @@
       '<input type="file" accept="image/*" class="trick-photo-input" data-sport="' + sport +
       '" data-id="' + idAttr + '" data-log-id="' + logAttr + '" hidden>' +
       "</span>";
-  }
-
-  function renderRecencyPhotoButton(logId, filled) {
-    var logAttr = escapeHtml(logId || "");
-    return '<button type="button" class="recency-photo-btn' + (filled ? " is-filled" : "") +
-      '" data-act="recency-photo" data-kind="kneeboard" data-id="' + logAttr +
-      '" aria-label="View trick photo">' +
-      '<span class="trick-photo-icon">' + photoIconSvg(!!filled) + "</span>" +
-      "</button>";
   }
 
   function setPhotoButtonState(btn, filled) {
@@ -2032,33 +2023,6 @@
     return (person && person.memberId) || "";
   }
 
-  function afterHostChange() {
-    if (recencyTimer) clearTimeout(recencyTimer);
-    recencyTimer = setTimeout(loadRecency, 60);
-  }
-
-  function loadRecency() {
-    if (!clubVisible() || !hostEnabled() || typeof window.LakeClub.recency !== "function") {
-      recencyRows = [];
-      recencyError = "";
-      renderRecency();
-      return;
-    }
-    window.LakeClub.recency(window.LAKE_SB).then(function (data) {
-      if (data && data.ok === false) {
-        recencyRows = [];
-        recencyError = data.error || "";
-      } else {
-        recencyRows = (data && data.rows) || [];
-        recencyError = "";
-      }
-      renderRecency();
-    }).catch(function () {
-      recencyRows = [];
-      renderRecency();
-    });
-  }
-
   function pushSlalomLog(person, row) {
     if (!hostEnabled() || !row || !isUuid(row.id)) return;
     var mid = memberIdFor(person);
@@ -2068,13 +2032,14 @@
       memberId: mid,
       off: row.off,
       mph: row.mph,
-      buoys: row.buoys
-    }).then(afterHostChange).catch(function () {});
+      buoys: row.buoys,
+      clubId: clubState().clubId
+    }).catch(function () {});
   }
 
   function dropSlalomLog(id) {
     if (!hostEnabled() || !isUuid(id)) return;
-    window.LakeClub.deleteSlalom(window.LAKE_SB, id).then(afterHostChange).catch(function () {});
+    window.LakeClub.deleteSlalom(window.LAKE_SB, id, clubState().clubId).catch(function () {});
   }
 
   function dropKneeboardIds(ids) {
@@ -2082,10 +2047,10 @@
     var jobs = [];
     var i;
     for (i = 0; i < ids.length; i++) {
-      if (isUuid(ids[i])) jobs.push(window.LakeClub.deleteKneeboard(window.LAKE_SB, ids[i]));
+      if (isUuid(ids[i])) jobs.push(window.LakeClub.deleteKneeboard(window.LAKE_SB, ids[i], clubState().clubId));
     }
     if (!jobs.length) return;
-    Promise.all(jobs).then(afterHostChange).catch(afterHostChange);
+    Promise.all(jobs).catch(function () {});
   }
 
   function hostPushKneeboardNew(person, entry, index, trickName, mode) {
@@ -2101,8 +2066,9 @@
       memberId: mid,
       trickName: trickName,
       mode: mode === "hard" ? "hard" : "easy",
-      loggedAt: kneeboardLoggedAt(day)
-    }).then(afterHostChange).catch(function () {});
+      loggedAt: kneeboardLoggedAt(day),
+      clubId: clubState().clubId
+    }).catch(function () {});
   }
 
   function hostUpdateKneeboard(person, entry, index, trickName, mode) {
@@ -2116,8 +2082,9 @@
       memberId: mid,
       trickName: trickName,
       mode: mode === "hard" ? "hard" : "easy",
-      loggedAt: kneeboardLoggedAt(day)
-    }).then(afterHostChange).catch(function () {});
+      loggedAt: kneeboardLoggedAt(day),
+      clubId: clubState().clubId
+    }).catch(function () {});
   }
 
   function hostDropKneeboardEntry(entry) {
@@ -2133,21 +2100,6 @@
     var btn = document.getElementById("submit-set-btn");
     if (!btn) return;
     btn.disabled = parseBuoys(draftBuoys) == null;
-    paintChartPreview();
-  }
-
-  function paintChartPreview() {
-    var el = document.getElementById("chart-preview");
-    if (!el) return;
-    var n = parseBuoys(draftBuoys);
-    if (n == null) {
-      el.textContent = "Pick a buoy count to see this set’s chart rank.";
-      return;
-    }
-    var p = currentPerson();
-    var pass = normalizePass(p.selectedPass.off, p.selectedPass.mph);
-    var set = { off: pass.off, mph: pass.mph, buoys: n };
-    el.textContent = "This set · Chart " + chartText(set) + " · " + passLabel(set);
   }
 
   function logSet(buoys) {
@@ -2199,7 +2151,6 @@
   function paintClubChrome() {
     var vis = clubVisible();
     var note = document.getElementById("club-signin-note");
-    var recency = document.getElementById("recency-board");
     var session = document.getElementById("latest-session");
     var club = document.getElementById("club-board");
     var beat = document.getElementById("beat-board");
@@ -2207,22 +2158,19 @@
     var junior = document.getElementById("junior-block");
     var footer = document.querySelector("footer p");
     var kicker = document.querySelector("#club-board .board-kicker");
-    var recencyKicker = document.querySelector("#recency-board .board-kicker");
     var rosterKicker = document.querySelector("#club-roster-block .board-kicker");
     var name = liveClubName();
     if (note) note.hidden = vis;
-    if (recency) recency.hidden = !vis;
     if (session) session.hidden = !vis;
     if (club) club.hidden = !vis;
     if (beat) beat.hidden = !vis;
     if (best) best.hidden = !vis;
     if (junior) junior.hidden = true;
     if (kicker) kicker.textContent = name;
-    if (recencyKicker) recencyKicker.textContent = name;
     if (rosterKicker) rosterKicker.textContent = name;
     if (footer) {
       footer.textContent = vis
-        ? "lake.world · " + name + " · recency is shared"
+        ? "lake.world · " + name
         : "lake.world · this device only";
     }
     if (window.LakeClubUi && typeof window.LakeClubUi.paint === "function") {
@@ -2478,166 +2426,8 @@
     list.innerHTML = html;
   }
 
-  function recencyName(row) {
-    var n = (row && row.display_name) || "Member";
-    if (row && row.is_junior && n.indexOf("(junior)") === -1) n += " (junior)";
-    return n;
-  }
-
-  function highFiveIcon() {
-    return '<svg class="highfive-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
-      '<path d="M8.1 10.4V6.2a1.35 1.35 0 0 1 2.7 0v4.2h.15V4.7a1.35 1.35 0 1 1 2.7 0v5.6h.15V5.5a1.35 1.35 0 1 1 2.7 0v6h.15V7.6a1.35 1.35 0 1 1 2.7 0V14c0 3.45-2.35 6.15-6.05 6.15-3.25 0-5.8-2.25-5.8-5.55v-1.15H7.2A1.85 1.85 0 0 1 5.35 12V9.3a1.35 1.35 0 0 1 2.7 0v1.1h.05z"/>' +
-      "</svg>";
-  }
-
-  function highFiveLabel(count) {
-    var n = parseInt(count, 10);
-    if (!(n > 0)) return "";
-    return String(n);
-  }
-
-  function commentIcon() {
-    return '<svg class="comment-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
-      '<path d="M20.4 11.7c0 3.75-3.76 6.8-8.4 6.8-.86 0-1.7-.1-2.48-.3L4.9 19.9l1.42-3.55C4.85 15.1 3.6 13.5 3.6 11.7c0-3.75 3.76-6.8 8.4-6.8s8.4 3.05 8.4 6.8z"/>' +
-      "</svg>";
-  }
-
-  function recencyKey(kind, id) {
-    return String(kind || "") + ":" + String(id || "");
-  }
-
-  function focusRecencyComposer(kind, id) {
-    var list = document.getElementById("recency-list");
-    if (!list) return;
-    var forms = list.querySelectorAll(".comment-form");
-    var i;
-    for (i = 0; i < forms.length; i++) {
-      if (forms[i].getAttribute("data-kind") === String(kind || "") &&
-        forms[i].getAttribute("data-id") === String(id || "")) {
-        var field = forms[i].querySelector("input");
-        if (field && field.focus) field.focus();
-        return;
-      }
-    }
-  }
-
-  function renderRecency() {
-    var list = document.getElementById("recency-list");
-    var empty = document.getElementById("recency-empty");
-    if (!list) return;
-    if (!clubVisible()) {
-      list.innerHTML = "";
-      if (empty) empty.hidden = true;
-      return;
-    }
-    var rows = recencyRows || [];
-    if (!rows.length) {
-      list.innerHTML = "";
-      if (empty) {
-        empty.hidden = false;
-        if (recencyError && /database yet|club_missing|Ask Darin/i.test(recencyError)) {
-          empty.textContent = "Club recency is not on the database yet.";
-        } else {
-          empty.textContent = "No club logs yet.";
-        }
-      }
-      return;
-    }
-    if (empty) empty.hidden = true;
-    var me = myMember();
-    var meId = me && me.id;
-    var cur = currentPerson();
-    var curMember = cur && cur.memberId;
-    var html = "";
-    var i;
-    for (i = 0; i < rows.length; i++) {
-      var row = rows[i] || {};
-      var you = (curMember && row.member_id === curMember) || (meId && row.member_id === meId);
-      var kind = row.kind === "kneeboard" ? "kneeboard" : "slalom";
-      html += '<li class="board-row recency-row' + (you ? " is-you" : "") + '">';
-      html += '<div class="recency-top">';
-      html += '<span class="board-name">' + escapeHtml(recencyName(row)) + "</span>";
-      if (kind === "kneeboard") {
-        html += '<span class="board-date">' + escapeHtml(prettyDateShort(isoDay(row.logged_at))) + "</span>";
-      } else {
-        html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + "</span>";
-      }
-      html += "</div>";
-      html += '<div class="recency-detail">';
-      html += '<div class="recency-facts">';
-      if (kind === "kneeboard") {
-        html += '<span class="recency-kind">Kneeboard</span>';
-        html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + "</span>";
-      } else {
-        html += '<span class="recency-kind">Slalom</span>';
-        html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + "</span>";
-        html += '<span class="board-chart">Chart ' + escapeHtml(chartText(row)) + "</span>";
-      }
-      html += "</div>";
-      var comments = Array.isArray(row.comments) ? row.comments : [];
-      var open = !!recencyOpen[recencyKey(kind, row.id)];
-      html += '<div class="recency-acts">';
-      html += '<button type="button" class="comment-btn' + (open ? " is-on" : "") +
-        '" data-act="toggle-comments" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
-        '" aria-expanded="' + (open ? "true" : "false") + '" aria-label="Comments">';
-      html += commentIcon();
-      if (comments.length) {
-        html += '<span class="comment-count">' + escapeHtml(String(comments.length)) + "</span>";
-      }
-      html += "</button>";
-      html += '<button type="button" class="highfive-btn' + (row.i_high_five ? " is-on" : "") +
-        '" data-act="high-five" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") +
-        '" aria-pressed="' + (row.i_high_five ? "true" : "false") + '" aria-label="High five">';
-      html += highFiveIcon();
-      var fiveLabel = highFiveLabel(row.high_fives);
-      if (fiveLabel) html += '<span class="highfive-count">' + escapeHtml(fiveLabel) + "</span>";
-      html += "</button>";
-      if (kind === "kneeboard") {
-        var hasPhoto = !!(row.has_photo || row.photo_id || row.photo_path);
-        if (hasPhoto) {
-          rememberPhotoMeta({
-            id: row.photo_id,
-            kneeboard_log_id: row.id,
-            object_path: row.photo_path,
-            member_id: row.member_id,
-            can_edit: false
-          });
-          html += renderRecencyPhotoButton(row.id, true);
-        }
-      }
-      html += "</div>";
-      html += "</div>";
-      if (open) {
-        html += '<div class="recency-social">';
-        if (comments.length) {
-          html += '<ul class="comment-list">';
-          var c;
-          for (c = 0; c < comments.length; c++) {
-            var com = comments[c] || {};
-            html += '<li class="comment-item">';
-            html += '<span class="comment-author">' + escapeHtml(com.display_name || "Member") + "</span>";
-            html += '<span class="comment-body">' + escapeHtml(com.body || "") + "</span>";
-            if (com.mine) {
-              html += '<button type="button" class="comment-delete" data-act="delete-comment" data-id="' +
-                escapeHtml(com.id || "") + '">Delete</button>';
-            }
-            html += "</li>";
-          }
-          html += "</ul>";
-        }
-        html += '<form class="comment-form" data-kind="' + kind + '" data-id="' + escapeHtml(row.id || "") + '">';
-        html += '<input type="text" maxlength="280" placeholder="Add a comment…" aria-label="Add a comment" required>';
-        html += '<button type="submit">Post</button></form>';
-        html += "</div>";
-      }
-      html += "</li>";
-    }
-    list.innerHTML = html;
-  }
-
   function renderBoards() {
     paintClubChrome();
-    renderRecency();
     renderSession();
     renderClubBoard();
     renderBeatAverage();
@@ -2961,46 +2751,6 @@
       deleteSet(btn.getAttribute("data-id"));
       return;
     }
-    if (act === "toggle-comments") {
-      var cKind = btn.getAttribute("data-kind");
-      var cId = btn.getAttribute("data-id");
-      var cKey = recencyKey(cKind, cId);
-      var willOpen = !recencyOpen[cKey];
-      if (willOpen) recencyOpen[cKey] = true;
-      else delete recencyOpen[cKey];
-      renderRecency();
-      if (willOpen) focusRecencyComposer(cKind, cId);
-      return;
-    }
-    if (act === "high-five") {
-      if (!hostEnabled() || !window.LakeClub.toggleHighFive) return;
-      window.LakeClub.toggleHighFive(window.LAKE_SB, btn.getAttribute("data-kind"), btn.getAttribute("data-id"))
-        .then(function (res) {
-          if (res && res.ok === false) {
-            showToast("log", res.error || "Could not High five.");
-            return;
-          }
-          loadRecency();
-        }).catch(function () {});
-      return;
-    }
-    if (act === "recency-photo") {
-      openPhotoLightboxForLog(btn.getAttribute("data-id"), btn, "kneeboard", "");
-      return;
-    }
-    if (act === "delete-comment") {
-      if (!hostEnabled() || !window.LakeClub.deleteComment) return;
-      window.LakeClub.deleteComment(window.LAKE_SB, btn.getAttribute("data-id"))
-        .then(function (res) {
-          if (res && res.ok === false) {
-            showToast("log", res.error || "Could not delete that comment.");
-            return;
-          }
-          loadRecency();
-        }).catch(function () {});
-      return;
-    }
-
     var sport = btn.getAttribute("data-sport");
     var id = btn.getAttribute("data-id");
     if (!sport || !id) return;
@@ -3157,28 +2907,6 @@
     });
   }
 
-  var recencyList = document.getElementById("recency-list");
-  if (recencyList && !recencyList.getAttribute("data-bound")) {
-    recencyList.setAttribute("data-bound", "1");
-    recencyList.addEventListener("submit", function (e) {
-      var form = e.target && e.target.closest ? e.target.closest(".comment-form") : null;
-      if (!form) return;
-      e.preventDefault();
-      if (!hostEnabled() || !window.LakeClub.addComment) return;
-      var field = form.querySelector("input");
-      var body = field ? field.value : "";
-      window.LakeClub.addComment(window.LAKE_SB, form.getAttribute("data-kind"), form.getAttribute("data-id"), body)
-        .then(function (res) {
-          if (res && res.ok === false) {
-            showToast("log", res.error || "Could not post that comment.");
-            return;
-          }
-          if (field) field.value = "";
-          loadRecency();
-        }).catch(function () {});
-    });
-  }
-
   var photoLightboxCloseBtn = document.getElementById("photo-lightbox-close");
   if (photoLightboxCloseBtn) {
     photoLightboxCloseBtn.addEventListener("click", function () { closePhotoLightbox(); });
@@ -3264,7 +2992,6 @@
   paintUnits();
   paintScore();
   paintShelf();
-  loadRecency();
   openMediaDb(function () {
     fillAllMedia();
     scanAnyMedia(function (found) {
