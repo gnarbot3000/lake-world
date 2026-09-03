@@ -3,6 +3,7 @@
 
   var sb = null;
   var state = null;
+  var clubLogs = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -30,10 +31,17 @@
     if (wrap) wrap.hidden = !email;
   }
 
+  function loadClubLogs() {
+    if (!state || state.status !== "approved" || !clubLogs) return;
+    clubLogs.setClub(sb, state.clubId);
+    clubLogs.load();
+  }
+
   function refreshThen(done) {
     window.LakeClub.refresh(sb).then(function (next) {
       state = next;
       paint();
+      loadClubLogs();
       if (done) done();
     }).catch(function (err) {
       showError((err && err.message) || "Could not refresh.");
@@ -86,9 +94,13 @@
   }
 
   function paintMembers() {
+    var section = $("members-section");
     var list = $("members-list");
     var empty = $("members-empty");
     if (!list) return;
+    var isAdmin = !!(state && state.isAdmin);
+    if (section) section.hidden = !isAdmin;
+    if (!isAdmin) return;
     var members = (state && state.members) || [];
     if (!members.length) {
       list.innerHTML = "";
@@ -96,7 +108,6 @@
       return;
     }
     if (empty) empty.hidden = true;
-    var isAdmin = !!(state && state.isAdmin);
     var adminIds = adminUserIds();
     var html = "";
     var i;
@@ -212,8 +223,8 @@
     if (foot && state.clubName) foot.textContent = "lake.world · " + state.clubName;
     if (role) {
       role.textContent = state.isAdmin
-        ? "You are an admin. Approve pending people and add other admins here."
-        : "Only admins can approve people and add other admins.";
+        ? "Recent club activity. Admin controls are below."
+        : "Recent club activity.";
     }
     paintPending();
     paintMembers();
@@ -228,6 +239,7 @@
       if (!btn || !sb) return;
       var act = btn.getAttribute("data-act");
       if (!act) return;
+      if (clubLogs && clubLogs.handleClick(btn)) return;
       showError("");
       if (act === "approve" || act === "deny") {
         var status = act === "approve" ? "approved" : "denied";
@@ -270,10 +282,20 @@
         state = next;
         window.LAKE_CLUB = next;
         paint();
-        location.reload();
-      }).catch(function () {
-        location.reload();
+        loadClubLogs();
+      }).catch(function (err) {
+        showError((err && err.message) || "Could not switch clubs.");
       });
+    });
+  }
+
+  var adminApp = $("admin-app");
+  if (adminApp) {
+    adminApp.addEventListener("submit", function (e) {
+      var form = e.target && e.target.closest ? e.target.closest(".comment-form") : null;
+      if (!form || !clubLogs) return;
+      e.preventDefault();
+      clubLogs.handleSubmit(form);
     });
   }
 
@@ -298,6 +320,7 @@
 
   try {
     sb = window.supabase.createClient(window.LAKE_SUPABASE_URL, window.LAKE_SUPABASE_ANON);
+    clubLogs = new window.LakeClubLogs({ sb: sb, clubId: "", showError: showError });
   } catch (err) {
     sb = null;
   }
@@ -321,6 +344,7 @@
     window.LAKE_CLUB = next;
     if (next && next.ok === false && next.error) showError(next.error);
     paint();
+    loadClubLogs();
   }).catch(function () {
     state = window.LakeClub.emptyState("none");
     paint();
