@@ -312,7 +312,7 @@
     html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + '</span></div>';
     html += '<div class="recency-detail"><div class="recency-facts">';
     if (kind === "kneeboard") html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + '</span>';
-    else html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + '</span><span class="board-chart">Chart ' + escapeHtml(chartText(row)) + '</span>';
+    else html += '<span class="board-pass">' + escapeHtml(passLabel(row)) + '</span><span class="board-chart">Score ' + escapeHtml(chartText(row)) + '</span>';
     html += '</div><div class="recency-acts">';
     html += '<button type="button" class="comment-btn' + (isOpen ? ' is-on' : '') + '" data-act="toggle-comments" data-kind="' + kind + '" data-id="' + escapeHtml(row.id) + '" aria-expanded="' + isOpen + '" aria-label="Comments">' + commentIcon();
     if (comments.length) html += '<span class="comment-count">' + comments.length + '</span>';
@@ -339,7 +339,7 @@
     return html + '</li>';
   };
 
-  /* Slalom: best Chart per skier from selected-club hosted slalom logs in the recency payload. */
+  /* Slalom: best Score per skier from selected-club hosted slalom logs in the recency payload. */
   ClubLogs.prototype.slalomLeaderboard = function () {
     var best = {};
     var i;
@@ -413,7 +413,7 @@
       html += '<span class="club-lb-run-fact">' + escapeHtml(row.trick_name || "") + "</span>";
     } else {
       html += '<span class="club-lb-run-fact">' + escapeHtml(passLabel(row)) + "</span>";
-      html += '<span class="club-lb-run-chart">Chart ' + escapeHtml(chartText(row)) + "</span>";
+      html += '<span class="club-lb-run-chart">Score ' + escapeHtml(chartText(row)) + "</span>";
     }
     html += '<span class="club-lb-run-date">' + escapeHtml(prettyDateTime(row.logged_at)) + "</span>";
     html += "</li>";
@@ -433,7 +433,7 @@
       escapeHtml(entry.display_name) + "</button>";
     if (kind === "slalom") {
       html += '<span class="board-pass">' + escapeHtml(entry.pass) + "</span>";
-      html += '<span class="board-chart">Chart ' + escapeHtml(entry.chart) + "</span>";
+      html += '<span class="board-chart">Score ' + escapeHtml(entry.chart) + "</span>";
     } else {
       html += '<span class="board-metric">' + entry.count + (entry.count === 1 ? " trick" : " tricks") + "</span>";
     }
@@ -502,7 +502,7 @@
       if (lbTitle) lbTitle.textContent = "Leaderboard";
       if (lbKicker) {
         lbKicker.textContent = cat === "slalom"
-          ? "Best Chart from this club’s hosted slalom logs"
+          ? "Best Score from this club’s hosted slalom logs"
           : "Most distinct tricks landed in this club";
       }
       var shownLb = ranks.slice(0, this.leaderboardLimit);

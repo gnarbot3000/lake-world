@@ -736,7 +736,7 @@
     return i < 0 ? 0 : i;
   }
 
-  /* Chart: faster boat first, then shorter line (more off), then buoys.
+  /* Score: faster boat first, then shorter line (more off), then buoys.
      Same line: 4 @ 30 mph beats 6 @ 28 mph. After 36 mph, more off is harder. */
   function chartScore(set) {
     if (!set) return 0;
@@ -1073,7 +1073,7 @@
         slSub.textContent = "";
         slSub.hidden = true;
       } else {
-        slSub.textContent = setupShort(best) + " · chart " + chartText(best);
+        slSub.textContent = setupShort(best) + " · score " + chartText(best);
         slSub.hidden = false;
       }
     }
@@ -1088,7 +1088,7 @@
     if (num) num.textContent = best ? formatBuoys(best.buoys) : "—";
     if (setup) setup.textContent = best ? setupShort(best) : "";
     if (chartEl) {
-      chartEl.textContent = best ? ("Chart " + chartText(best)) : "";
+      chartEl.textContent = best ? ("Score " + chartText(best)) : "";
       chartEl.hidden = !best;
     }
   }
