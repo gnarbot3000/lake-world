@@ -1203,14 +1203,15 @@ input:focus-visible {
 .recency-row {
   flex-direction: column;
   align-items: stretch;
-  gap: 0.28rem;
-  min-height: var(--tap);
+  gap: 0.08rem;
+  min-height: 0;
+  padding: 0.32rem 0.55rem;
 }
 .recency-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 .recency-top .board-name { flex: 1; }
@@ -1218,7 +1219,7 @@ input:focus-visible {
 .recency-detail {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 .recency-facts {
@@ -1265,9 +1266,9 @@ input:focus-visible {
 .recency-social {
   display: flex;
   flex-direction: column;
-  gap: 0.22rem;
-  margin-top: 0.05rem;
-  padding-top: 0.28rem;
+  gap: 0.16rem;
+  margin-top: 0.02rem;
+  padding-top: 0.2rem;
   border-top: 1px solid var(--line);
 }
 .highfive-btn,
@@ -1888,3 +1889,96 @@ body.settings-open { overflow: hidden; }
 }
 
 body.photo-lightbox-open { overflow: hidden; }
+
+
+/* ---- Club page category + dense activity ---- */
+.club-cats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0.65rem 0 0;
+}
+.club-cat {
+  appearance: none;
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--chip);
+  background: var(--surface);
+  border: 2px solid var(--chip);
+  border-radius: 999px;
+  min-height: var(--tap);
+  padding: 0.35rem 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+.club-cat.is-active {
+  background: var(--chip);
+  color: #FFFFFF;
+  border-color: var(--chip);
+}
+.club-dense-list {
+  gap: 0.28rem;
+  margin-top: 0.4rem;
+}
+.club-lb-row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 0;
+  padding: 0.36rem 0.55rem;
+}
+.club-lb-row .board-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.club-lb-row .board-pass {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.club-lb-row .board-metric {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  justify-self: end;
+}
+.club-lb-row .board-chart {
+  justify-self: end;
+  white-space: nowrap;
+}
+.club-lb-row.is-kneeboard {
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+}
+.see-more-btn {
+  appearance: none;
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--navy);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-height: var(--tap);
+  padding: 0.2rem 0.1rem;
+  margin-top: 0.15rem;
+  cursor: pointer;
+  text-align: left;
+  touch-action: manipulation;
+}
+.see-more-btn[hidden] { display: none; }
+#club-leaderboard-section .board-kicker {
+  margin: 0.12rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mute);
+}

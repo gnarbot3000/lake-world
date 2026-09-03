@@ -223,8 +223,8 @@
     if (foot && state.clubName) foot.textContent = "lake.world · " + state.clubName;
     if (role) {
       role.textContent = state.isAdmin
-        ? "Recent club activity. Admin controls are below."
-        : "Recent club activity.";
+        ? "Club activity and rankings. Admin controls are below."
+        : "Club activity and rankings.";
     }
     paintPending();
     paintMembers();
@@ -286,6 +286,15 @@
       }).catch(function (err) {
         showError((err && err.message) || "Could not switch clubs.");
       });
+    });
+  }
+
+  var clubCats = $("club-cats");
+  if (clubCats) {
+    clubCats.addEventListener("click", function (e) {
+      var btn = e.target.closest("button.club-cat");
+      if (!btn || !clubLogs) return;
+      clubLogs.setCategory(btn.getAttribute("data-cat") || "all");
     });
   }
 
