@@ -758,7 +758,7 @@
 
   function passLabel(set) {
     if (!set) return "";
-    return formatBuoys(set.buoys) + " · " + setupShort(set);
+    return formatBuoys(set.buoys) + " @ " + setupShort(set);
   }
 
   function compareSetsDesc(a, b) {
@@ -2133,7 +2133,7 @@
     renderHistory();
     renderBoards();
     pushSlalomLog(p, row);
-    showToast("log", "Logged " + formatBuoys(n) + " · " + setupShort(pass));
+    showToast("log", "Logged " + formatBuoys(n) + " @ " + setupShort(pass));
   }
 
   function deleteSet(id) {
