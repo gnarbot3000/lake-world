@@ -7,27 +7,35 @@
   var IDB_STORE = "media";
 
   var KNEEBOARD = [
-    { id: "kb-s360-r", name: "Surface 360 right", mode: "easy" },
-    { id: "kb-s360-l", name: "Surface 360 left", mode: "easy" },
-    { id: "kb-s360-ftf", name: "Surface 360 front-to-front", mode: "easy" },
-    { id: "kb-s180", name: "Surface 180", mode: "easy" },
-    { id: "kb-wrap", name: "Surface wrap", mode: "easy" },
-    { id: "kb-ollie", name: "Ollie", mode: "easy" },
-    { id: "kb-tumble", name: "Tumble turn", mode: "easy" },
-    { id: "kb-s360-rev", name: "Surface 360 reverse", mode: "easy" },
-    { id: "kb-s180-rev", name: "Surface 180 reverse", mode: "easy" },
-    { id: "kb-w180", name: "Wake 180", mode: "easy" },
-    { id: "kb-w180-rev", name: "Wake 180 reverse", mode: "easy" },
-    { id: "kb-roll-l", name: "Basic roll left", mode: "easy" },
-    { id: "kb-roll-r", name: "Basic roll right", mode: "easy" },
-    { id: "kb-heli", name: "Heli (wake 360, handle pass)", mode: "hard" },
-    { id: "kb-w360", name: "Wake 360", mode: "hard" },
-    { id: "kb-s540", name: "Surface 540", mode: "hard" },
-    { id: "kb-s720", name: "Surface 720", mode: "hard" },
-    { id: "kb-backroll", name: "Backroll", mode: "hard" },
-    { id: "kb-frontflip", name: "Front flip", mode: "hard" },
-    { id: "kb-w540", name: "Wake 540", mode: "hard" },
-    { id: "kb-hflip", name: "Handle flip", mode: "hard" }
+    { id: "kb-ollie", name: "Ollie", diff: 2, mode: "easy" },
+    { id: "kb-s90", name: "Surface 90", diff: 2, mode: "easy" },
+    { id: "kb-tumble", name: "Tumble turn", diff: 3, mode: "easy" },
+    { id: "kb-s180", name: "Surface 180", diff: 3, mode: "easy" },
+    { id: "kb-butter", name: "Butter slide", diff: 3, mode: "easy" },
+    { id: "kb-s180-rev", name: "Surface 180 reverse", diff: 4, mode: "easy" },
+    { id: "kb-wrap", name: "Surface wrap", diff: 4, mode: "easy" },
+    { id: "kb-w180", name: "Wake 180", diff: 4, mode: "easy" },
+    { id: "kb-s270", name: "Surface 270", diff: 4, mode: "easy" },
+    { id: "kb-w180-rev", name: "Wake 180 reverse", diff: 5, mode: "easy" },
+    { id: "kb-roll-l", name: "Basic roll left", diff: 5, mode: "easy" },
+    { id: "kb-roll-r", name: "Basic roll right", diff: 5, mode: "easy" },
+    { id: "kb-s360-r", name: "Surface 360 right", diff: 5, mode: "easy" },
+    { id: "kb-wake-wrap", name: "Wake wrap", diff: 5, mode: "easy" },
+    { id: "kb-s360-l", name: "Surface 360 left", diff: 6, mode: "easy" },
+    { id: "kb-s360-ftf", name: "Surface 360 front-to-front", diff: 6, mode: "easy" },
+    { id: "kb-s360-rev", name: "Surface 360 reverse", diff: 6, mode: "easy" },
+    { id: "kb-w360", name: "Wake 360", diff: 7, mode: "hard" },
+    { id: "kb-heli", name: "Heli (wake 360, handle pass)", diff: 8, mode: "hard" },
+    { id: "kb-backroll", name: "Backroll", diff: 8, mode: "hard" },
+    { id: "kb-frontflip", name: "Front flip", diff: 8, mode: "hard" },
+    { id: "kb-backflip", name: "Backflip", diff: 8, mode: "hard" },
+    { id: "kb-s540", name: "Surface 540", diff: 8, mode: "hard" },
+    { id: "kb-tantrum", name: "Tantrum", diff: 8, mode: "hard" },
+    { id: "kb-w540", name: "Wake 540", diff: 9, mode: "hard" },
+    { id: "kb-s720", name: "Surface 720", diff: 9, mode: "hard" },
+    { id: "kb-hflip", name: "Handle flip", diff: 9, mode: "hard" },
+    { id: "kb-mobius", name: "Mobius", diff: 9, mode: "hard" },
+    { id: "kb-w720", name: "Wake 720", diff: 10, mode: "hard" }
   ];
 
   var CATALOGS = { kneeboard: KNEEBOARD };
@@ -1330,104 +1338,135 @@
 
   /* ---- render ---- */
 
+  var kbQuery = "";
+
+  function trickDiff(item) {
+    if (!item) return 4;
+    if (typeof item.diff === "number") return item.diff;
+    return item.mode === "hard" ? 8 : 4;
+  }
+
+  function workingBand() {
+    var items = itemsFor("kneeboard");
+    var diffs = [];
+    var i;
+    for (i = 0; i < items.length; i++) {
+      if (isLanded(getEntry("kneeboard", items[i].id))) diffs.push(trickDiff(items[i]));
+    }
+    if (!diffs.length) return 3;
+    diffs.sort(function (a, b) { return a - b; });
+    var top = diffs.slice(Math.max(0, diffs.length - 3));
+    var sum = 0;
+    for (i = 0; i < top.length; i++) sum += top[i];
+    return Math.max(1, Math.min(10, Math.round(sum / top.length)));
+  }
+
+  function pickNear(landedWanted, band, limit) {
+    var items = itemsFor("kneeboard");
+    var scored = [];
+    var i;
+    for (i = 0; i < items.length; i++) {
+      var landed = isLanded(getEntry("kneeboard", items[i].id));
+      if (landed !== landedWanted) continue;
+      var d = trickDiff(items[i]);
+      scored.push({ item: items[i], dist: Math.abs(d - band), d: d });
+    }
+    scored.sort(function (a, b) {
+      if (a.dist !== b.dist) return a.dist - b.dist;
+      return landedWanted ? (b.d - a.d) : (a.d - b.d);
+    });
+    var out = [];
+    for (i = 0; i < scored.length && out.length < limit; i++) out.push(scored[i].item);
+    return out;
+  }
+
+  function searchTricks(q) {
+    q = String(q || "").toLowerCase();
+    if (!q) return [];
+    var items = itemsFor("kneeboard");
+    var hits = [];
+    var i;
+    for (i = 0; i < items.length; i++) {
+      if (String(items[i].name || "").toLowerCase().indexOf(q) !== -1) hits.push(items[i]);
+    }
+    return hits;
+  }
+
+  function findTrickByName(name) {
+    var q = String(name || "").toLowerCase();
+    var items = itemsFor("kneeboard");
+    var i;
+    for (i = 0; i < items.length; i++) {
+      if (String(items[i].name || "").toLowerCase() === q) return items[i];
+    }
+    return null;
+  }
+
+  function renderTrickRow(item, sport) {
+    var entry = getEntry(sport, item.id);
+    var landed = isLanded(entry);
+    var custom = !!item.custom;
+    var d = trickDiff(item);
+    var classes = "trick-item" + (landed ? " is-done" : " is-try") + (custom ? " is-custom" : "");
+    var html = '<li class="' + classes + '" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">';
+    html += '<div class="trick-main">';
+    html += '<label class="trick-label">';
+    html += '<input type="checkbox" data-act="land" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '"' + (landed ? " checked" : "") + ">";
+    html += '<span class="name">' + escapeHtml(item.name);
+    if (custom) html += '<span class="write-in">Write-in</span>';
+    html += '<span class="kb-diff">' + d + "</span>";
+    html += "</span></label></div>";
+    if (custom) {
+      html += '<div class="trick-side"><button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button></div>';
+    }
+    html += "</li>";
+    return html;
+  }
+
   function renderSport(sport) {
     if (sport !== "kneeboard") return;
     var list = document.getElementById("list-" + sport);
-    var items = itemsFor(sport);
-    var ordered = [];
-    var i;
-    for (i = 0; i < items.length; i++) {
-      if (modeOf(sport, items[i].id) !== "hard") ordered.push(items[i]);
-    }
-    for (i = 0; i < items.length; i++) {
-      if (modeOf(sport, items[i].id) === "hard") ordered.push(items[i]);
-    }
-    items = ordered;
+    var band = workingBand();
+    var q = kbQuery;
     var html = "";
-    var lastGroup = "";
-    for (i = 0; i < items.length; i++) {
-      var item = items[i];
-      var entry = getEntry(sport, item.id);
-      var mode = modeOf(sport, item.id);
-      if (mode !== lastGroup) {
-        lastGroup = mode;
-        html += '<li class="trick-group">' + (mode === "hard" ? "Hard" : "Easy") + "</li>";
+    var i;
+    if (q) {
+      var hits = searchTricks(q);
+      html += '<li class="trick-group">Search</li>';
+      if (!hits.length) {
+        html += '<li class="trick-item"><div class="trick-main"><span class="name">No hive match. Log it to add a write-in.</span></div></li>';
+      } else {
+        for (i = 0; i < hits.length && i < 8; i++) html += renderTrickRow(hits[i], sport);
       }
-      var landed = isLanded(entry);
-      var custom = !!item.custom;
-      var classes = "trick-item" +
-        (landed ? " is-done" : "") +
-        (custom ? " is-custom" : "") +
-        (mode === "hard" ? " is-hard" : " is-easy");
-      html += '<li class="' + classes + '" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">';
-      html += '<div class="trick-main">';
-      html += '<label class="trick-label">';
-      html += '<input type="checkbox" data-act="land" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '"' + (landed ? " checked" : "") + ">";
-      html += '<span class="name">' + escapeHtml(item.name);
-      if (custom) html += '<span class="write-in">Write-in</span>';
-      html += "</span></label>";
-
-      if (landed) {
-        html += '<div class="first-date"><label>First landed';
-        html += '<input type="date" class="first-date-input" data-act="first-date" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '" value="' + escapeHtml(entry.firstDate) + '">';
-        html += "</label></div>";
-
-        if (mode === "hard") {
-          var n = entry.dates.length;
-          html += '<div class="logbook">';
-          html += '<p class="log-count">Logged ' + n + (n === 1 ? " time" : " times") + "</p>";
-          if (n > 1) {
-            html += '<ul class="date-list">';
-            for (var d = 1; d < n; d++) {
-              html += "<li>";
-              html += '<input type="date" class="log-date" data-act="log-date" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '" data-index="' + d + '" value="' + escapeHtml(entry.dates[d]) + '">';
-              html += '<button type="button" class="drop-date" data-act="drop-date" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '" data-index="' + d + '">Remove</button>';
-              html += "</li>";
-            }
-            html += "</ul>";
-          }
-          html += '<button type="button" class="log-again" data-act="log-again" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Log today</button>';
-          html += "</div>";
-        }
-
-        html += '<div class="media-slot" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">';
-        html += '<div class="media-preview" hidden></div>';
-        html += '<label class="media-add"><span>Photo or short video</span>';
-        html += '<input type="file" class="media-file" accept="image/*,video/*" data-act="media-file" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">';
-        html += "</label>";
-        html += '<button type="button" class="media-remove" hidden data-act="media-remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove media</button>';
-        html += '<p class="media-note">Stays in this browser only.</p>';
-        html += '<p class="media-error"></p>';
-        html += "</div>";
+    } else {
+      var landed = pickNear(true, band, 3);
+      var trying = pickNear(false, band, 3);
+      html += '<li class="trick-group">Landed near you</li>';
+      if (!landed.length) {
+        html += '<li class="trick-item"><div class="trick-main"><span class="name">Nothing landed in this band yet. Log one below.</span></div></li>';
+      } else {
+        for (i = 0; i < landed.length; i++) html += renderTrickRow(landed[i], sport);
       }
-
-      html += "</div>";
-      html += '<div class="trick-side">';
-      html += '<button type="button" class="mode-toggle is-' + mode + '" data-act="mode" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '" aria-label="Mode: ' + (mode === "hard" ? "hard logbook" : "easy unlock") + '. Click to switch.">';
-      html += mode === "hard" ? "Hard" : "Easy";
-      html += "</button>";
-      if (custom) {
-        html += '<button type="button" class="remove" data-act="remove" data-sport="' + sport + '" data-id="' + escapeHtml(item.id) + '">Remove</button>';
+      html += '<li class="trick-group">Try next</li>';
+      if (!trying.length) {
+        html += '<li class="trick-item"><div class="trick-main"><span class="name">Search to add a trick at this level.</span></div></li>';
+      } else {
+        for (i = 0; i < trying.length; i++) html += renderTrickRow(trying[i], sport);
       }
-      html += "</div></li>";
     }
     list.innerHTML = html;
     updateProgress(sport);
-    if (idbReady) fillMedia(sport);
   }
 
   function updateProgress(sport) {
     if (sport !== "kneeboard") return;
-    var items = itemsFor(sport);
-    var done = 0;
-    for (var i = 0; i < items.length; i++) {
-      if (isLanded(getEntry(sport, items[i].id))) done++;
-    }
-    var total = items.length;
-    var pct = total ? Math.round((done / total) * 100) : 0;
+    var band = workingBand();
     var card = document.querySelector('[data-progress="' + sport + '"]');
-    card.querySelector(".progress-counts").textContent = done + " / " + total + " · " + pct + "%";
-    card.querySelector(".lake-fill").style.width = pct + "%";
+    if (!card) return;
+    var counts = card.querySelector(".progress-counts");
+    if (counts) counts.textContent = "Working range · " + band;
+    var fill = card.querySelector(".lake-fill");
+    if (fill) fill.style.width = (band * 10) + "%";
   }
 
   function setSelectedPass(off, mph) {
@@ -2344,26 +2383,51 @@
       var form = e.currentTarget;
       var sport = form.getAttribute("data-sport");
       var field = form.querySelector('input[name="name"]');
-      var hardBox = form.querySelector('input[name="hard"]');
       var name = (field.value || "").replace(/\s+/g, " ").trim();
       if (!name) return;
-      var mode = hardBox && hardBox.checked ? "hard" : "easy";
+      var existing = findTrickByName(name);
+      if (existing) {
+        var already = getEntry(sport, existing.id);
+        if (!isLanded(already)) {
+          var entryE = ensureEntry(sport, existing.id);
+          landNow(entryE);
+          hostPushKneeboardNew(currentPerson(), entryE, 0, existing.name, modeOf(sport, existing.id));
+        }
+        kbQuery = "";
+        afterProgress();
+        field.value = "";
+        renderSport(sport);
+        field.focus();
+        return;
+      }
+      var band = workingBand();
+      var mode = band >= 7 ? "hard" : "easy";
       var custom = {
         id: "custom-" + sport + "-" + Date.now(),
         name: name,
         custom: true,
-        mode: mode
+        mode: mode,
+        diff: band
       };
       currentPerson().sports[sport].customs.push(custom);
       var entry = ensureEntry(sport, custom.id);
       entry.mode = mode;
       landNow(entry);
       hostPushKneeboardNew(currentPerson(), entry, 0, name, mode);
+      kbQuery = "";
       afterProgress();
       field.value = "";
-      if (hardBox) hardBox.checked = false;
       renderSport(sport);
       field.focus();
+    });
+  }
+
+  var kbSearch = document.getElementById("add-kneeboard");
+  if (kbSearch && !kbSearch.getAttribute("data-hive")) {
+    kbSearch.setAttribute("data-hive", "1");
+    kbSearch.addEventListener("input", function () {
+      kbQuery = (kbSearch.value || "").replace(/\s+/g, " ").trim();
+      renderSport("kneeboard");
     });
   }
 

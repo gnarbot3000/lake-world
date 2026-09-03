@@ -1572,3 +1572,23 @@ body.settings-open { overflow: hidden; }
   color: var(--mute);
   line-height: 1.4;
 }
+
+.kb-feed-title {
+  margin: 1rem 1rem 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kb-diff {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--chip);
+}
+.trick-item.is-try .trick-label { color: var(--ink); }
+.kb-search { margin: 0.85rem 1rem 0; }
+.kb-search .add-row { margin-top: 0.35rem; }
+.kb-search .btn-primary { width: auto; padding: 0 1rem; }
