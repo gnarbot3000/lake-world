@@ -1090,7 +1090,7 @@
         slSub.textContent = "";
         slSub.hidden = true;
       } else {
-        slSub.textContent = setupShort(best) + " · score " + chartText(best);
+        slSub.textContent = setupShort(best) + " · Score " + chartText(best);
         slSub.hidden = false;
       }
     }

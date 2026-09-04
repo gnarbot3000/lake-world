@@ -45,8 +45,8 @@ Roster / admins live in lake.world Supabase. **Club page logs** (submitted slalo
 
 ## Recent logs vs local boards
 
-- **Club page** (`preview/admin.html`) — hosted, approved members only, scoped to the selected club. Header chrome keeps **Sign Out** and a circular **Your Mini** control (head silhouette, navy outline) that opens the personal Mini (`index.html`) — replaces the old text **Mini** link. Under the club title: segmented **All | Slalom | Kneeboard**. **All** (landing) shows **Recent activity** — the 10 most recent logs across both sports, newest first. **Slalom** / **Kneeboard** show that category’s **Leaderboard** first, then the 10 most recent logs in that category. Each section offers **See more** when more rows exist (recent expands by 20; leaderboard by 10). Client slices the existing `club_sport_recency` payload (limit 50 today; raise later if a club outgrows that). Activity cards are vertically compressed (tighter padding/gaps) while comment / high-five / photo icons keep ~40px tap targets. Slalom and Kneeboard activity rows both show **date and time** (same prettyDateTime style as Mini Slalom). Slalom rows also show pass (buoys · line · speed) and **Chart**; Kneeboard rows show trick — no easy unlock / hard log mode text. Social actions stay: comment icon, high-five hand, and (Kneeboard only) a filled photo icon when a club-shared photo exists — comment, high-five, then photo furthest right. High five is one per member per log, toggles off, count at 1+. Comments stay Instagram-style behind the icon. Photo privacy unchanged (signed club-shared Storage). Guests, pending, and denied users do not see these sections. Admin management stays below activity for admins. No fake members or seeded performances.
-- **Club page leaderboards** — built client-side from the selected club’s hosted logs in the recency payload (not the personal Mini device boards). **Slalom:** best **Chart** per skier (member) among that club’s slalom logs; higher Score ranks first. **Kneeboard:** most **distinct tricks landed** (unique trick names) per skier in that club; higher count ranks first, then most recent activity. Empty copy when that club has no qualifying logs. Tapping a skier’s **name** expands that row (one open at a time) to show their **5 most recent** runs in the **active** category from the same payload (slalom → pass + Chart + date/time; kneeboard → trick + date/time). **See more** under those runs loads +10 more when they have additional records; tap the name again to collapse. No invented runs.
+- **Club page** (`preview/admin.html`) — hosted, approved members only, scoped to the selected club. Header chrome keeps **Sign Out** and a circular **Your Mini** control (head silhouette, navy outline) that opens the personal Mini (`index.html`) — replaces the old text **Mini** link. Under the club title: segmented **All | Slalom | Kneeboard**. **All** (landing) shows **Recent activity** — the 10 most recent logs across both sports, newest first. **Slalom** / **Kneeboard** show that category’s **Leaderboard** first, then the 10 most recent logs in that category. Each section offers **See more** when more rows exist (recent expands by 20; leaderboard by 10). Client slices the existing `club_sport_recency` payload (limit 50 today; raise later if a club outgrows that). Activity cards are vertically compressed (tighter padding/gaps) while comment / high-five / photo icons keep ~40px tap targets. Slalom and Kneeboard activity rows both show **date and time** (same prettyDateTime style as Mini Slalom). Slalom rows also show pass (buoys · line · speed) and **Score**; Kneeboard rows show trick — no easy unlock / hard log mode text. Social actions stay: comment icon, high-five hand, and (Kneeboard only) a filled photo icon when a club-shared photo exists — comment, high-five, then photo furthest right. High five is one per member per log, toggles off, count at 1+. Comments stay Instagram-style behind the icon. Photo privacy unchanged (signed club-shared Storage). Guests, pending, and denied users do not see these sections. Admin management stays below activity for admins. No fake members or seeded performances.
+- **Club page leaderboards** — built client-side from the selected club’s hosted logs in the recency payload (not the personal Mini device boards). **Slalom:** best **Score** per skier (member) among that club’s slalom logs; higher Score ranks first. **Kneeboard:** most **distinct tricks landed** (unique trick names) per skier in that club; higher count ranks first, then most recent activity. Empty copy when that club has no qualifying logs. Tapping a skier’s **name** expands that row (one open at a time) to show their **5 most recent** runs in the **active** category from the same payload (slalom → pass + Score + date/time; kneeboard → trick + date/time). **See more** under those runs loads +10 more when they have additional records; tap the name again to collapse. No invented runs.
 - **Latest session** / **Club board** / **Beat average** / **Best 10** — this-device personal boards for you and your juniors. Ranking on Club board, Best 10, and Latest session follows the **slalom score**, not raw buoy count: faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph); after 36 mph, more off is harder; then buoys. The **Score** number is that conversion, shown on the slalom screen and on the boards. Latest session still sorts by Score; it also shows a **vs avg** column. Empty copy unchanged.
 
 **Beat average** is NESS-style mixed-ability ranking, not a golf handicap and not NOPS. Each skier’s latest day Score is scored against the mean of their two best day-Scores in the rolling 12 months before that day (the scoring day is excluded). Higher (more positive) delta ranks first. Skiers without two earlier days in that window still appear at the bottom with rank — and **Need 2 days**. Score / Club board stay raw ability.
@@ -61,7 +61,7 @@ A set is 4–6 passes through the course. Log only the **best run** of that set.
 
 Pick **line length**, **boat speed**, and buoy count (**1 through 6 in halves**). Nothing is posted until **Submit set**. Submit adds the set to this skier’s personal history and, for an approved member, to the selected club’s Slalom section. A tiny toast confirms it. **Buoys** is the official balls scored (1–6 in halves). History sits under the boards (newest first). Delete a set if you tapped wrong. Members submit only for themselves or their juniors. Guests stay personal-only.
 
-**Score rank** (not a tournament total): faster boat at the same line is a harder pass. Completing more of the ladder beats hanging at a slower speed. After max speed (36 mph), shorter line (more off) is harder, then buoys on that pass. The slalom screen and leaderboards show this Chart conversion. No Long line.
+**Score rank** (not a tournament total): faster boat at the same line is a harder pass. Completing more of the ladder beats hanging at a slower speed. After max speed (36 mph), shorter line (more off) is harder, then buoys on that pass. The slalom screen and leaderboards show this Score conversion. No Long line.
 
 There is no working-range window, no bump-up after a 6, and **no ZBS**.
 
@@ -78,7 +78,7 @@ Speeds: **28 / 30 / 32 / 34 / 36 mph** ↔ **46 / 49 / 52 / 55 / 58 kph**. Tappi
 
 No **Long line** option (starts at 15 off / 18.25 m). Default selected line/speed if unset: **15 off @ 28 mph**.
 
-Who-bar **Slalom** shows the buoy count of the *current skier’s* best logged run, plus setup and Chart (example: `Slalom · 4` with `15 off · 30 mph · chart 28`). Best follows the chart, not raw buoy count. No sets yet: `Slalom · —`.
+Who-bar **Slalom** shows the buoy count of the *current skier’s* best logged run, plus setup and Score (example: `Slalom · 4` with `15 off · 30 mph · Score 28`). Best follows the Score, not raw buoy count. No sets yet: `Slalom · —`.
 
 ## Score
 
@@ -93,18 +93,19 @@ Two numbers, both stored on this device so a later app can rank people. Self-rep
 
 ## Personal trophies
 
-Rare, auto-awarded shelf. No daily streaks. No badge for every easy surface 360. Kneeboard landings still award these; slalom set logs do not.
+Rare, auto-awarded shelf. No daily streaks. No badge for every easy surface 360. Kneeboard landings award the kneeboard trophies; slalom set logs can award the Score threshold trophies.
 
 The shelf sits in the shared chrome (visible on both tabs). A short non-blocking toast appears when a trophy is newly earned.
 
-Seeded trophies:
+Seeded trophies (titles match `TROPHY_DEFS` in `preview/app.js`):
 
-- **First trick** — kneeboard
-- **First hard trick**
-- **First heli** — the heli wake 360 (`kb-heli`)
-- **Five lands of one hard trick** — count ≥ 5 on any single hard trick
-- **First clip or photo** — first attached media
-- **Lake opener** — first trick landed in a calendar year (Mini awards this once when you land anything)
+- **First trick** — land any kneeboard trick
+- **Lake opener** — open your season (currently awarded on first land; how-to still says calendar year)
+- **First hard** — land a hard-band kneeboard trick
+- **First heli** — land Heli (`kb-heli`)
+- **Hard x5** — log the same hard trick five times
+- **First photo** — share a photo or clip on a landed trick
+- **Score 50 / 75 / 100** — post a slalom set at or above that Score
 
 Each trophy stores `id`, `title`, and earned date.
 
