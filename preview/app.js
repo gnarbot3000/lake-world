@@ -10,8 +10,8 @@
      kneeboard_log_photos metadata for the selected club. Never written
      to STORAGE_KEY/localStorage as blobs/base64/blob URLs. */
   var PHOTO_MAX_INPUT_BYTES = 15 * 1024 * 1024;
-  var PHOTO_MAX_DIMENSION = 1600;
-  var PHOTO_QUALITY = 0.82;
+  var PHOTO_MAX_DIMENSION = 1024;
+  var PHOTO_QUALITY = 0.72;
   var PHOTO_BUCKET = "kneeboard-photos";
   var PHOTO_JOIN_TOAST = "Join a club to share photos";
 
@@ -1535,20 +1535,7 @@
     return photoOutputTypeCache;
   }
 
-  function decodeImageBitmap(file) {
-    if (typeof createImageBitmap === "function") {
-      var withOrientation;
-      try {
-        withOrientation = createImageBitmap(file, { imageOrientation: "from-image" });
-      } catch (err) {
-        withOrientation = null;
-      }
-      if (withOrientation && typeof withOrientation.then === "function") {
-        return withOrientation.catch(function () {
-          return createImageBitmap(file);
-        });
-      }
-    }
+  function decodeViaImageElement(file) {
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file);
       var img = new Image();
@@ -1564,15 +1551,45 @@
     });
   }
 
+  function decodeImageBitmap(file) {
+    var bitmapPromise = null;
+    if (typeof createImageBitmap === "function") {
+      try {
+        bitmapPromise = createImageBitmap(file, { imageOrientation: "from-image" });
+      } catch (err) {
+        try {
+          bitmapPromise = createImageBitmap(file);
+        } catch (err2) {
+          bitmapPromise = null;
+        }
+      }
+      if (bitmapPromise && typeof bitmapPromise.then === "function") {
+        return bitmapPromise.catch(function () {
+          return createImageBitmap(file).catch(function () {
+            return decodeViaImageElement(file);
+          });
+        });
+      }
+    }
+    return decodeViaImageElement(file);
+  }
+
+  function fileLooksLikeImage(file) {
+    if (!file) return false;
+    var type = String(file.type || "").toLowerCase();
+    if (type.indexOf("image/") === 0) return true;
+    return /\.(jpe?g|png|gif|webp|heic|heif|bmp|tif?f)$/i.test(String(file.name || ""));
+  }
+
   function processPhotoFile(file) {
-    if (!file || !/^image\//i.test(file.type || "")) {
+    if (!fileLooksLikeImage(file)) {
       return Promise.reject({ code: "not-image", message: "Please choose a photo (JPEG, PNG, HEIC, etc)." });
     }
     if (file.size > PHOTO_MAX_INPUT_BYTES) {
       return Promise.reject({ code: "too-large", message: "That photo is larger than 15MB. Choose a smaller one." });
     }
     return decodeImageBitmap(file).catch(function () {
-      throw { code: "decode-failed", message: "Couldn\u2019t read that photo. Try a different file." };
+      throw { code: "decode-failed", message: "Couldn\u2019t read that photo. If it\u2019s HEIC, try JPEG or turn off iPhone High Efficiency." };
     }).then(function (bitmap) {
       var w0 = bitmap.width || bitmap.naturalWidth || 0;
       var h0 = bitmap.height || bitmap.naturalHeight || 0;
@@ -1742,6 +1759,7 @@
       showToast("log", "Photo shared with your club");
       afterProgress({ hasMedia: true });
       afterHostChange();
+      renderSport(sport);
       if (typeof onSaved === "function") onSaved(logId);
     }).catch(function (err) {
       var msg = (err && err.message) || "Couldn\u2019t save that photo.";
@@ -1895,10 +1913,15 @@
   function pickNear(landedWanted, band, limit) {
     var items = itemsFor("kneeboard");
     var scored = [];
+    var customs = [];
     var i;
     for (i = 0; i < items.length; i++) {
       var landed = isLanded(getEntry("kneeboard", items[i].id));
       if (landed !== landedWanted) continue;
+      if (landedWanted && items[i].custom) {
+        customs.push(items[i]);
+        continue;
+      }
       var d = trickDiff(items[i]);
       scored.push({ item: items[i], dist: Math.abs(d - band), d: d });
     }
@@ -1907,7 +1930,18 @@
       return landedWanted ? (b.d - a.d) : (a.d - b.d);
     });
     var out = [];
-    for (i = 0; i < scored.length && out.length < limit; i++) out.push(scored[i].item);
+    var seen = {};
+    if (landedWanted) {
+      for (i = 0; i < customs.length && out.length < limit; i++) {
+        out.push(customs[i]);
+        seen[customs[i].id] = true;
+      }
+    }
+    for (i = 0; i < scored.length && out.length < limit; i++) {
+      if (seen[scored[i].item.id]) continue;
+      out.push(scored[i].item);
+      seen[scored[i].item.id] = true;
+    }
     return out;
   }
 
@@ -2763,9 +2797,18 @@
       if (btn.classList.contains("is-filled")) {
         openPhotoLightbox(sport, id, btn);
       } else {
-        if (!isUuid(btn.getAttribute("data-log-id") || hostedLogIdForTrick(sport, id))) {
-          showToast("log", PHOTO_JOIN_TOAST);
-          return;
+        var logIdC = btn.getAttribute("data-log-id") || hostedLogIdForTrick(sport, id);
+        if (!isUuid(logIdC)) {
+          var entryC = ensureEntry(sport, id);
+          if (!Array.isArray(entryC.remoteIds)) entryC.remoteIds = [];
+          if (!isUuid(entryC.remoteIds[0])) entryC.remoteIds[0] = newUuid();
+          logIdC = entryC.remoteIds[0];
+          btn.setAttribute("data-log-id", logIdC);
+          var photoWrapFix = btn.closest(".trick-photo-wrap");
+          var photoInputFix = photoWrapFix ? photoWrapFix.querySelector(".trick-photo-input") : null;
+          if (photoInputFix) photoInputFix.setAttribute("data-log-id", logIdC);
+          save(state);
+          hostPushKneeboardNew(currentPerson(), entryC, 0, trickNameOf(sport, id), modeOf(sport, id));
         }
         var photoWrapC = btn.closest(".trick-photo-wrap");
         var photoInputC = photoWrapC ? photoWrapC.querySelector(".trick-photo-input") : null;
