@@ -82,14 +82,15 @@
     }
     if (location.protocol === "file:") {
       var path = String(location.pathname || "").replace(/\\/g, "/");
-      var cut = path.lastIndexOf("/preview/");
+      var cut = path.lastIndexOf("/app/");
+      if (cut < 0) cut = path.lastIndexOf("/preview/");
       if (cut >= 0) return "file://" + path.slice(0, cut);
       cut = path.lastIndexOf("/");
       return "file://" + (cut >= 0 ? path.slice(0, cut) : path);
     }
     if (host === "localhost" || host === "127.0.0.1") {
       var base = location.origin + String(location.pathname || "");
-      base = base.replace(/\/preview\/[^/]*$/, "").replace(/\/[^/]*$/, "");
+      base = base.replace(/\/app\/[^/]*$/, "").replace(/\/preview\/[^/]*$/, "").replace(/\/[^/]*$/, "");
       return base;
     }
     return location.origin;
