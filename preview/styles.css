@@ -836,11 +836,11 @@ input[type="date"] {
 
 .shelf-head h2 {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--mute);
+  color: var(--ink, #28203C);
 }
 
 .shelf-note {

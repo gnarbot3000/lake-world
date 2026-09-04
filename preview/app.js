@@ -94,7 +94,10 @@
     { id: "first-hard", title: "First hard", how: "Land a hard-band kneeboard trick.", icon: "flame" },
     { id: "first-heli", title: "First heli", how: "Land the Heli (wake 360, handle pass).", icon: "heli" },
     { id: "five-hard", title: "Hard x5", how: "Log the same hard trick five times.", icon: "stack" },
-    { id: "first-media", title: "First photo", how: "Share a photo or clip on a landed trick.", icon: "camera" }
+    { id: "first-media", title: "First photo", how: "Share a photo or clip on a landed trick.", icon: "camera" },
+    { id: "score-50", title: "Score 50", how: "Post a slalom set with Score of 50 or higher.", icon: "score50", threshold: 50 },
+    { id: "score-75", title: "Score 75", how: "Post a slalom set with Score of 75 or higher.", icon: "score75", threshold: 75 },
+    { id: "score-100", title: "Score 100", how: "Post a slalom set with Score of 100 or higher.", icon: "score100", threshold: 100 }
   ];
 
   function emptySport() {
@@ -1037,6 +1040,20 @@
       row = awardTrophy("first-media", todayISO());
       if (row) newly.push(row);
     }
+    var best = bestSet(p);
+    if (best) {
+      var score = chartScore(best);
+      var earnedDate = best.date || todayISO();
+      var i;
+      for (i = 0; i < TROPHY_DEFS.length; i++) {
+        var def = TROPHY_DEFS[i];
+        if (typeof def.threshold !== "number") continue;
+        if (score >= def.threshold) {
+          row = awardTrophy(def.id, earnedDate);
+          if (row) newly.push(row);
+        }
+      }
+    }
     return newly;
   }
 
@@ -1145,6 +1162,16 @@
         '<path d="M22 24l3-5h14l3 5" fill="' + gold + '"/>' +
         '<circle cx="32" cy="36" r="7" fill="' + soft + '" stroke="' + stroke + '" stroke-width="2.2"/>' +
         '<circle cx="32" cy="36" r="3.2" fill="' + stroke + '"/>' +
+        '</svg>';
+    }
+    if (/^score\d+$/.test(icon)) {
+      var label = icon.replace("score", "");
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<circle cx="32" cy="30" r="15" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.8"/>' +
+        '<circle cx="32" cy="30" r="10.5" fill="' + (earned ? "#FFF7EC" : "#F4F6F8") + '" stroke="' + stroke + '" stroke-width="1.6"/>' +
+        '<text x="32" y="34.5" text-anchor="middle" font-size="' + (label.length > 2 ? "11" : "13") + '" font-weight="800" fill="' + navy + '" font-family="system-ui,sans-serif">' + label + '</text>' +
+        '<path d="M18 50c4-4 8-6 14-6s10 2 14 6" fill="none" stroke="' + stroke + '" stroke-width="2.2" stroke-linecap="round"/>' +
         '</svg>';
     }
     /* wake / default */
@@ -1272,6 +1299,7 @@
     if (newly.length) {
       showToast("trophy", newly.map(function (t) { return t.title; }).join(" · "));
     }
+    return newly;
   }
 
   function paintNameField() {
@@ -2284,12 +2312,13 @@
       buoys: n
     };
     p.slalomSets.unshift(row);
-    save(state);
-    paintScore();
     renderHistory();
     renderBoards();
     pushSlalomLog(p, row);
-    showToast("log", "Logged " + formatBuoys(n) + " @ " + setupShort(pass));
+    var newly = afterProgress();
+    if (!newly.length) {
+      showToast("log", "Logged " + formatBuoys(n) + " @ " + setupShort(pass));
+    }
   }
 
   function deleteSet(id) {
