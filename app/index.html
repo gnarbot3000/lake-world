@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <title>lake.world</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <script src="../js/ga.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="mast-row">
+        <div class="brand" title="lake.world">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24">
+              <rect width="28" height="28" rx="7" fill="#28203C"/>
+              <circle cx="14" cy="14" r="5" fill="#FC5200"/>
+            </svg>
+          </div>
+          <p class="wordmark">lake.world</p>
+        </div>
+        <label class="sr-only" for="person-select">Who is skiing</label>
+        <select id="person-select" aria-label="Who is skiing"></select>
+        <label class="sr-only" for="person-name">Skier name</label>
+        <input id="person-name" type="text" maxlength="60" placeholder="Skier name" autocomplete="nickname" hidden>
+        <button type="button" class="settings-btn" id="settings-btn" aria-haspopup="dialog" aria-controls="settings-panel" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64L4.86 11.06c-.04.31-.06.63-.06.94s.02.63.06.94L2.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.39 1.04.7 1.63.94l.36 2.54c.05.24.25.42.49.42h3.8c.24 0 .44-.18.49-.42l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.24.1.51.01.64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="mast-row mast-auth" id="mast-auth" hidden>
+        <span id="mast-user-email"></span>
+        <label class="sr-only" for="club-select">Club</label>
+        <select id="club-select" aria-label="Club" hidden></select>
+        <a class="mast-admin-link" id="mast-admin-link" href="admin.html" hidden>Club</a>
+        <button type="button" id="signout-btn">Sign Out</button>
+      </div>
+      <div class="mast-row mast-tools">
+        <p class="stat-pill slalom-pill" id="slalom-score">
+          <span class="stat-main" id="slalom-score-main">Slalom · —</span>
+          <span class="stat-sub" id="slalom-score-sub" hidden></span>
+        </p>
+        <p class="stat-pill" id="person-score"><span class="stat-main">Score · 0</span></p>
+      </div>
+    </header>
+
+    <nav class="sport-tabs" role="tablist" aria-label="Sports">
+      <button type="button" class="tab is-active" role="tab" id="tab-slalom" aria-selected="true" aria-controls="panel-slalom" data-sport="slalom">Slalom</button>
+      <button type="button" class="tab" role="tab" id="tab-kneeboard" aria-selected="false" aria-controls="panel-kneeboard" data-sport="kneeboard">Kneeboard</button>
+    </nav>
+
+    <p class="club-signin-note" id="club-signin-note" hidden>Sign in to join a club.</p>
+    <p class="club-error" id="consume-error" hidden></p>
+    <section class="gate-card" id="pending-gate" hidden>
+      <h2 class="gate-title">Waiting for approval</h2>
+      <p class="legend">You are signed in. An admin of Ski Paradise Cleveland still has to approve you before you can see the club roster.</p>
+    </section>
+    <section class="gate-card" id="denied-gate" hidden>
+      <h2 class="gate-title">Not approved</h2>
+      <p class="legend">This club did not approve you.</p>
+    </section>
+    <section class="gate-card" id="join-gate" hidden>
+      <h2 class="gate-title">Join a club</h2>
+      <p class="legend">Enter your name, pick a club, and request to join. An admin still has to approve you before you can see the roster.</p>
+      <form id="join-club-form" autocomplete="nickname">
+        <label class="chip-label" for="join-name">Your name</label>
+        <input id="join-name" type="text" maxlength="80" placeholder="Name" required>
+        <label class="chip-label" for="join-club">Club</label>
+        <select id="join-club" required></select>
+        <button type="submit" class="btn-primary">Request to join</button>
+      </form>
+      <p class="club-error" id="join-error" hidden></p>
+    </section>
+
+    <main>
+      <section class="panel" id="panel-kneeboard" role="tabpanel" aria-labelledby="tab-kneeboard" data-sport="kneeboard" hidden>
+        <div class="progress-card" data-progress="kneeboard">
+          <div class="progress-meta">
+            <h2>Kneeboard</h2>
+            <p class="progress-counts"></p>
+          </div>
+          <div class="lake-meter" aria-hidden="true"><span class="lake-fill"></span></div>
+        </div>
+        <form class="add-form kb-search" data-sport="kneeboard" autocomplete="off">
+          <label for="add-kneeboard">Search or write in a trick</label>
+          <p class="kb-search-hint">Not listed? Type it and Log it.</p>
+          <div class="add-row">
+            <input id="add-kneeboard" name="name" type="search" maxlength="80" placeholder="Surface 360 left" enterkeyhint="go">
+            <button type="submit" class="btn-primary">Log it</button>
+          </div>
+        </form>
+        <ol class="trick-list" id="list-kneeboard"></ol>
+      </section>
+
+      <section class="panel is-active" id="panel-slalom" role="tabpanel" aria-labelledby="tab-slalom" data-sport="slalom">
+        <div class="roster-block" id="junior-block" hidden></div>
+
+        <div class="chip-group">
+          <p class="chip-label" id="line-label">Line length</p>
+          <div class="chip-row" role="group" aria-labelledby="line-label" id="line-chips"></div>
+        </div>
+
+        <div class="chip-group">
+          <p class="chip-label" id="speed-label">Boat speed</p>
+          <div class="chip-row" role="group" aria-labelledby="speed-label" id="speed-chips"></div>
+        </div>
+
+        <div class="best-hero" id="slalom-best-hero">
+          <p class="best-kicker">Best</p>
+          <p class="best-number" id="slalom-best-number">—</p>
+          <p class="best-setup" id="slalom-best-setup"></p>
+          <p class="best-score" id="slalom-best-score" hidden></p>
+        </div>
+
+        <div class="chip-group">
+          <p class="chip-label" id="buoy-label">Best run</p>
+          <div class="buoy-grid" role="group" aria-labelledby="buoy-label" id="buoy-chips"></div>
+          <button type="button" class="btn-primary" id="submit-set-btn" data-act="submit-set" disabled>Submit set</button>
+        </div>
+
+        <div class="board-block" id="latest-session">
+          <h2 class="board-title" id="latest-session-heading">Latest session</h2>
+          <div class="board-table">
+            <div class="board-head session-head" id="session-head" hidden>
+              <span>Skier</span><span>Pass</span><span>Score</span><span>vs avg</span>
+            </div>
+            <ul class="board-list" id="session-list"></ul>
+          </div>
+          <p class="shelf-empty" id="session-empty">No session yet.</p>
+        </div>
+
+        <div class="board-block" id="club-roster-block" hidden>
+          <h2 class="board-title">Roster</h2>
+          <p class="board-kicker">Ski Paradise Cleveland</p>
+          <ul class="roster-names" id="club-roster-list"></ul>
+        </div>
+
+        <div class="board-block" id="club-board">
+          <h2 class="board-title">Club board</h2>
+          <p class="board-kicker">Ski Paradise Cleveland</p>
+          <div class="board-table">
+            <div class="board-head club-head" id="club-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Pass</span><span>Score</span>
+            </div>
+            <ul class="board-list" id="club-list"></ul>
+          </div>
+          <p class="shelf-empty" id="club-empty">Log a set to open the board.</p>
+        </div>
+
+        <div class="board-block" id="beat-board">
+          <h2 class="board-title">Beat average</h2>
+          <p class="board-kicker">Vs your best two</p>
+          <div class="board-table">
+            <div class="board-head beat-head" id="beat-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Score</span><span>vs avg</span>
+            </div>
+            <ul class="board-list" id="beat-list"></ul>
+          </div>
+          <p class="shelf-empty" id="beat-empty">Need two earlier days, then the latest set ranks against that average.</p>
+        </div>
+
+        <div class="board-block" id="best-board">
+          <h2 class="board-title">Best 10</h2>
+          <p class="board-kicker">Top performances</p>
+          <div class="board-table">
+            <div class="board-head club-head" id="best-head" hidden>
+              <span>Rank</span><span>Skier</span><span>Date</span><span>Pass</span><span>Score</span>
+            </div>
+            <ul class="board-list" id="best-list"></ul>
+          </div>
+          <p class="shelf-empty" id="best-empty">No performances yet.</p>
+        </div>
+
+        <div class="history-block">
+          <h2 class="chip-label">This skier’s sets</h2>
+          <div class="sets-table">
+            <div class="sets-head" id="sets-head" hidden>
+              <span>Date</span><span>Pass</span><span>Score</span>
+            </div>
+            <ul class="set-history" id="set-history"></ul>
+          </div>
+          <p class="shelf-empty" id="history-empty">No sets yet.</p>
+        </div>
+      </section>
+    </main>
+
+    <section class="trophy-shelf" aria-label="Personal trophies">
+      <div class="shelf-head">
+        <h2>Trophy shelf</h2>
+        <p class="shelf-note">Your awards · tap a tile</p>
+      </div>
+      <div class="trophy-stage">
+        <ul class="shelf-list" id="trophy-shelf"></ul>
+        <div class="trophy-plank" aria-hidden="true"></div>
+      </div>
+      <div class="trophy-caption" id="trophy-caption" hidden></div>
+    </section>
+
+    <footer>
+      <p>lake.world · Ski Paradise Cleveland · this device only</p>
+    </footer>
+  </div>
+
+  <div class="settings-scrim" id="settings-scrim" hidden></div>
+  <section class="settings-panel" id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="settings-head">
+      <h2 id="settings-title">Settings</h2>
+      <button type="button" class="settings-close" id="settings-close">Close</button>
+    </div>
+    <div class="settings-section">
+      <p class="chip-label" id="units-label">Speed units</p>
+      <div class="units-seg" role="group" aria-labelledby="units-label">
+        <button type="button" id="units-mph" data-act="units" data-units="mph" aria-pressed="true">mph</button>
+        <button type="button" id="units-kph" data-act="units" data-units="kph" aria-pressed="false">kph</button>
+      </div>
+    </div>
+    <div class="settings-section" id="settings-faq">
+      <p class="chip-label">FAQ</p>
+      <p class="faq-q">How do I log a slalom set?</p>
+      <p class="faq-a">Pick line, speed, and buoy count, then Submit this set’s best run.</p>
+      <p class="faq-q">How does Score rank work?</p>
+      <p class="faq-a">Faster boat at the same line is harder (4 @ 30 mph beats 6 @ 28 mph). After 36 mph, more off is harder, then buoys.</p>
+      <p class="faq-q">How does Beat average work?</p>
+      <p class="faq-a">Latest day versus the average of your two best Scores in the last 12 months (not counting today). Whoever beats their own average by more ranks higher. Score board stays raw ability.</p>
+    </div>
+    <div class="settings-section club-tools" id="club-tools" hidden>
+      <form class="add-skier-form" id="add-junior-form" autocomplete="off">
+        <label class="chip-label" for="junior-name">Add a junior</label>
+        <div class="add-row">
+          <input id="junior-name" type="text" maxlength="80" placeholder="Name" required>
+          <button type="submit" class="btn-primary">Add junior</button>
+        </div>
+      </form>
+      <p class="legend">Juniors have no email. They wait for an admin to approve, then show in your skier list.</p>
+      <div id="pending-juniors" hidden></div>
+    </div>
+  </section>
+  <div class="photo-lightbox-scrim" id="photo-lightbox-scrim" hidden></div>
+  <section class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Trick photo" hidden>
+    <div class="photo-lightbox-inner">
+      <button type="button" class="photo-lightbox-close" id="photo-lightbox-close">Close</button>
+      <img class="photo-lightbox-img" id="photo-lightbox-img" alt="">
+      <div class="photo-lightbox-actions">
+        <button type="button" class="photo-lightbox-replace" id="photo-lightbox-replace">Replace</button>
+        <button type="button" class="photo-lightbox-remove" id="photo-lightbox-remove">Remove photo</button>
+      </div>
+      <div class="photo-lightbox-confirm" id="photo-lightbox-confirm" hidden>
+        <p>Remove this photo? This cannot be undone.</p>
+        <div class="photo-lightbox-confirm-row">
+          <button type="button" class="photo-lightbox-confirm-cancel" id="photo-lightbox-confirm-cancel">Cancel</button>
+          <button type="button" class="photo-lightbox-confirm-remove" id="photo-lightbox-confirm-remove">Remove</button>
+        </div>
+      </div>
+      <input type="file" accept="image/*" id="photo-lightbox-file" hidden>
+    </div>
+  </section>
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/auth-preview.js"></script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <title>lake.world club</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <script src="../js/ga.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="mast-row">
+        <div class="brand" title="lake.world">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24">
+              <rect width="28" height="28" rx="7" fill="#28203C"/>
+              <circle cx="14" cy="14" r="5" fill="#FC5200"/>
+            </svg>
+          </div>
+          <p class="wordmark">lake.world</p>
+        </div>
+      </div>
+      <div class="mast-row mast-auth" id="mast-auth" hidden>
+        <span id="mast-user-email"></span>
+        <label class="sr-only" for="club-select">Club</label>
+        <select id="club-select" aria-label="Club" hidden></select>
+        <a class="mast-you-link" href="index.html" aria-label="Your Mini" title="Your Mini">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="12" cy="8.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M5.2 18.6c1.15-3.35 3.55-5 6.8-5s5.65 1.65 6.8 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </a>
+        <button type="button" id="signout-btn">Sign Out</button>
+      </div>
+    </header>
+    <main>
+      <p class="club-error" id="admin-error" hidden></p>
+      <section class="gate-card" id="admin-gate" hidden>
+        <h1 class="gate-title">Club</h1>
+        <p class="legend" id="admin-gate-copy">Sign in from lake.world to open your club.</p>
+        <a class="preview-nav" href="../index.html">Sign in</a>
+      </section>
+      <div id="admin-app" hidden>
+        <h1 class="gate-title" id="admin-club-title">Ski Paradise Cleveland</h1>
+        <p class="legend" id="admin-role"></p>
+
+        <nav class="club-cats" id="club-cats" role="tablist" aria-label="Club category">
+          <button type="button" class="club-cat is-active" role="tab" data-cat="all" aria-selected="true">All</button>
+          <button type="button" class="club-cat" role="tab" data-cat="slalom" aria-selected="false">Slalom</button>
+          <button type="button" class="club-cat" role="tab" data-cat="kneeboard" aria-selected="false">Kneeboard</button>
+        </nav>
+
+        <section class="board-block club-log-section" id="club-leaderboard-section" hidden>
+          <h2 class="board-title" id="club-leaderboard-title">Leaderboard</h2>
+          <p class="board-kicker" id="club-leaderboard-kicker"></p>
+          <ul class="board-list club-dense-list" id="club-leaderboard-list"></ul>
+          <p class="shelf-empty" id="club-leaderboard-empty">No rankings yet.</p>
+          <button type="button" class="see-more-btn" id="club-leaderboard-more" data-act="see-more-leaderboard" hidden>See more</button>
+        </section>
+
+        <section class="board-block club-log-section" id="club-recent-section">
+          <h2 class="board-title" id="club-recent-title">Recent activity</h2>
+          <ul class="board-list club-dense-list" id="club-recent-list"></ul>
+          <p class="shelf-empty" id="club-recent-empty">No activity yet.</p>
+          <button type="button" class="see-more-btn" id="club-recent-more" data-act="see-more-recent" hidden>See more</button>
+        </section>
+
+        <section class="board-block" id="pending-section" hidden>
+          <h2 class="board-title">Pending</h2>
+          <ul class="admin-list" id="pending-list"></ul>
+          <p class="shelf-empty" id="pending-empty">No one waiting.</p>
+        </section>
+
+        <section class="board-block" id="members-section" hidden>
+          <h2 class="board-title">Members</h2>
+          <ul class="admin-list" id="members-list"></ul>
+          <p class="shelf-empty" id="members-empty">No approved members yet.</p>
+        </section>
+
+        <section class="board-block" id="admins-section" hidden>
+          <h2 class="board-title">Admins</h2>
+          <ul class="admin-list" id="admins-list"></ul>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <p>lake.world · Ski Paradise Cleveland</p>
+    </footer>
+  </div>
+
+
+  <div class="photo-lightbox-scrim" id="photo-lightbox-scrim" hidden></div>
+  <section class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Trick photo" hidden>
+    <div class="photo-lightbox-inner">
+      <button type="button" class="photo-lightbox-close" id="photo-lightbox-close">Close</button>
+      <img class="photo-lightbox-img" id="photo-lightbox-img" alt="">
+      <div class="photo-lightbox-actions" hidden>
+        <button type="button" class="photo-lightbox-replace" id="photo-lightbox-replace" hidden>Replace</button>
+        <button type="button" class="photo-lightbox-remove" id="photo-lightbox-remove">Remove photo</button>
+      </div>
+      <div class="photo-lightbox-confirm" id="photo-lightbox-confirm" hidden>
+        <p>Remove this club-shared photo?</p>
+        <div class="photo-lightbox-confirm-row">
+          <button type="button" class="photo-lightbox-confirm-cancel" id="photo-lightbox-confirm-cancel">Cancel</button>
+          <button type="button" class="photo-lightbox-confirm-remove" id="photo-lightbox-confirm-remove">Remove</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/club.js"></script>
+  <script src="club-logs.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

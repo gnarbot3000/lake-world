@@ -29,8 +29,8 @@
     }
   }
 
-  function goPreview() {
-    location.href = "preview/index.html" + inviteQuery();
+  function goApp() {
+    location.href = "app/index.html" + inviteQuery();
   }
 
   function emailRedirectTo() {
@@ -71,7 +71,7 @@
         showError(result.error.message);
         return;
       }
-      goPreview();
+      goApp();
     }).catch(function (err) {
       showError((err && err.message) || "Sign in failed.");
     }).then(function () {
@@ -102,7 +102,7 @@
         return;
       }
       if (result.data && result.data.session) {
-        goPreview();
+        goApp();
         return;
       }
       return sb.auth.signInWithPassword({ email: creds.email, password: creds.password }).then(function (signed) {
@@ -110,7 +110,7 @@
           showError("Account created. Sign In.", true);
           return;
         }
-        goPreview();
+        goApp();
       });
     }).catch(function (err) {
       showError((err && err.message) || "Could not create the account.");
@@ -138,7 +138,7 @@
   if (sb) {
     sb.auth.getSession().then(function (result) {
       var session = result && result.data && result.data.session;
-      if (session && session.user) goPreview();
+      if (session && session.user) goApp();
     }).catch(function () {});
   }
 })();
