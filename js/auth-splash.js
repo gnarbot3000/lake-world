@@ -30,7 +30,7 @@
   }
 
   function goApp() {
-    location.href = "app/index.html" + inviteQuery();
+    location.href = "app/" + inviteQuery();
   }
 
   function emailRedirectTo() {

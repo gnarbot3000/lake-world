@@ -12,4 +12,4 @@ Membership is email join + pick a club + admin approve. Clubs: Ski Paradise Clev
 
 Domain sits at Squarespace. Registrar stays Squarespace. Separate from hibala.com.
 
-Open `index.html`. App is `app/index.html`.
+Open `index.html`. App is `/app/`.
