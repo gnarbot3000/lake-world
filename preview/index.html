@@ -192,11 +192,15 @@
 
     <section class="trophy-shelf" aria-label="Personal trophies">
       <div class="shelf-head">
-        <h2>Trophies</h2>
-        <p class="shelf-note">Rare kneeboard awards.</p>
+        <h2>Trophy shelf</h2>
+        <p class="shelf-note">Your awards · tap a tile</p>
       </div>
-      <ul class="shelf-list" id="trophy-shelf"></ul>
-      <p class="shelf-empty" id="trophy-empty">Empty shelf — land a first trick, a hard trick, a heli, five of one hard, or attach a clip.</p>
+      <div class="trophy-stage">
+        <ul class="shelf-list" id="trophy-shelf"></ul>
+        <div class="trophy-plank" aria-hidden="true"></div>
+      </div>
+      <div class="trophy-caption" id="trophy-caption" hidden></div>
+      <p class="shelf-empty" id="trophy-empty" hidden></p>
     </section>
 
     <footer>

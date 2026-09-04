@@ -89,12 +89,12 @@
 
 
   var TROPHY_DEFS = [
-    { id: "first-trick", title: "First trick" },
-    { id: "first-hard", title: "First hard trick" },
-    { id: "first-heli", title: "First heli" },
-    { id: "five-hard", title: "Five lands of one hard trick" },
-    { id: "first-media", title: "First clip or photo" },
-    { id: "lake-opener", title: "Lake opener" }
+    { id: "first-trick", title: "First trick", how: "Land any kneeboard trick.", icon: "wake" },
+    { id: "lake-opener", title: "Lake opener", how: "Open your season — first land of the year.", icon: "sunrise" },
+    { id: "first-hard", title: "First hard", how: "Land a hard-band kneeboard trick.", icon: "flame" },
+    { id: "first-heli", title: "First heli", how: "Land the Heli (wake 360, handle pass).", icon: "heli" },
+    { id: "five-hard", title: "Hard x5", how: "Log the same hard trick five times.", icon: "stack" },
+    { id: "first-media", title: "First photo", how: "Share a photo or clip on a landed trick.", icon: "camera" }
   ];
 
   function emptySport() {
@@ -1093,36 +1093,158 @@
     }
   }
 
-  function medalSvg() {
-    return '<svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true">' +
-      '<circle cx="14" cy="16" r="8" fill="#E7C56A" stroke="#8a6a12" stroke-width="1.4"/>' +
-      '<circle cx="14" cy="16" r="4.2" fill="#FBFDFF"/>' +
-      '<path d="M9 4 L14 10 L19 4 L16.5 4 L14 8 L11.5 4 Z" fill="#FC5200"/>' +
-      "</svg>";
+  function trophyDefById(id) {
+    var i;
+    for (i = 0; i < TROPHY_DEFS.length; i++) {
+      if (TROPHY_DEFS[i].id === id) return TROPHY_DEFS[i];
+    }
+    return null;
+  }
+
+  function trophyIconSvg(icon, earned) {
+    var stroke = earned ? "#FC5200" : "#9AA3AF";
+    var fill = earned ? "#FC5200" : "none";
+    var soft = earned ? "#FFE4D4" : "#EEF3F8";
+    var gold = earned ? "#E7C56A" : "#C5CCD6";
+    var navy = earned ? "#28203C" : "#9AA3AF";
+    var common = ' viewBox="0 0 64 64" width="56" height="56" aria-hidden="true"';
+    if (icon === "sunrise") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M12 40h40" stroke="' + navy + '" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<circle cx="32" cy="34" r="10" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.6"/>' +
+        '<path d="M32 18v4M18 28l3 2M46 28l-3 2M22 20l2.5 2.5M42 20l-2.5 2.5" stroke="' + stroke + '" stroke-width="2" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+    if (icon === "flame") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M32 16c6 8 14 12 14 24a14 14 0 1 1-28 0c0-6 4-10 7-14 1 5 4 7 7 7 0-6 0-11 0-17z" fill="' + fill + '" stroke="' + navy + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+    if (icon === "heli") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M16 30c8-10 24-10 32 0" fill="none" stroke="' + stroke + '" stroke-width="3" stroke-linecap="round"/>' +
+        '<path d="M20 38c6 6 18 6 24 0" fill="none" stroke="' + navy + '" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<circle cx="32" cy="34" r="4" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.5"/>' +
+        '</svg>';
+    }
+    if (icon === "stack") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<rect x="18" y="36" width="28" height="8" rx="3" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.5"/>' +
+        '<rect x="20" y="28" width="24" height="8" rx="3" fill="' + soft + '" stroke="' + stroke + '" stroke-width="1.8"/>' +
+        '<rect x="22" y="20" width="20" height="8" rx="3" fill="' + fill + '" stroke="' + navy + '" stroke-width="1.5"/>' +
+        '</svg>';
+    }
+    if (icon === "camera") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<rect x="14" y="24" width="36" height="24" rx="6" fill="' + (earned ? "#28203C" : "#C5CCD6") + '"/>' +
+        '<path d="M22 24l3-5h14l3 5" fill="' + gold + '"/>' +
+        '<circle cx="32" cy="36" r="7" fill="' + soft + '" stroke="' + stroke + '" stroke-width="2.2"/>' +
+        '<circle cx="32" cy="36" r="3.2" fill="' + stroke + '"/>' +
+        '</svg>';
+    }
+    /* wake / default */
+    return '<svg' + common + '>' +
+      '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+      '<path d="M12 38c8-2 12-10 20-10s12 8 20 10" fill="none" stroke="' + navy + '" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path d="M18 30c6-8 14-12 22-8" fill="none" stroke="' + stroke + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<circle cx="40" cy="22" r="3.2" fill="' + gold + '"/>' +
+      '</svg>';
   }
 
   function paintShelf() {
     var list = document.getElementById("trophy-shelf");
     var empty = document.getElementById("trophy-empty");
+    var caption = document.getElementById("trophy-caption");
     if (!list) return;
+    var earnedMap = {};
     var trophies = personTrophies();
-    if (!trophies.length) {
-      list.innerHTML = "";
-      if (empty) empty.hidden = false;
-      return;
+    var i;
+    for (i = 0; i < trophies.length; i++) {
+      earnedMap[trophies[i].id] = trophies[i];
     }
     if (empty) empty.hidden = true;
     var html = "";
-    for (var i = 0; i < trophies.length; i++) {
-      var t = trophies[i];
-      html += '<li class="trophy" data-id="' + escapeHtml(t.id) + '">';
-      html += '<span class="trophy-medal">' + medalSvg() + "</span>";
-      html += '<span class="trophy-title">' + escapeHtml(t.title) + "</span>";
-      html += '<time class="trophy-when" datetime="' + escapeHtml(t.earned || "") + '">' +
-        escapeHtml(prettyDate(t.earned)) + "</time>";
+    var focusId = "";
+    for (i = 0; i < TROPHY_DEFS.length; i++) {
+      var def = TROPHY_DEFS[i];
+      var earnedRow = earnedMap[def.id];
+      var earned = !!earnedRow;
+      if (!focusId && earned) focusId = def.id;
+      html += '<li class="trophy-card' + (earned ? " is-earned" : " is-locked") + '" data-id="' + escapeHtml(def.id) + '" role="button" tabindex="0" aria-pressed="false">';
+      html += '<div class="trophy-plate">';
+      html += '<span class="trophy-medal">' + trophyIconSvg(def.icon, earned) + "</span>";
+      if (earned) html += '<span class="trophy-badge">Earned</span>';
+      else html += '<span class="trophy-badge is-lock">Locked</span>';
+      html += "</div>";
+      html += '<span class="trophy-title">' + escapeHtml(def.title) + "</span>";
+      if (earned && earnedRow.earned) {
+        html += '<time class="trophy-when" datetime="' + escapeHtml(earnedRow.earned) + '">' +
+          escapeHtml(prettyDate(earnedRow.earned)) + "</time>";
+      } else {
+        html += '<span class="trophy-how">' + escapeHtml(def.how || "") + "</span>";
+      }
       html += "</li>";
     }
     list.innerHTML = html;
+    if (!focusId && TROPHY_DEFS.length) focusId = TROPHY_DEFS[0].id;
+    focusTrophyCard(focusId, true);
+    bindTrophyShelf();
+  }
+
+  function focusTrophyCard(id, silent) {
+    var list = document.getElementById("trophy-shelf");
+    var caption = document.getElementById("trophy-caption");
+    if (!list) return;
+    var cards = list.querySelectorAll(".trophy-card");
+    var i;
+    var active = null;
+    for (i = 0; i < cards.length; i++) {
+      var on = cards[i].getAttribute("data-id") === id;
+      cards[i].classList.toggle("is-center", on);
+      cards[i].setAttribute("aria-pressed", on ? "true" : "false");
+      if (on) active = cards[i];
+    }
+    var def = trophyDefById(id);
+    if (caption && def) {
+      var earnedRow = null;
+      var trophies = personTrophies();
+      for (i = 0; i < trophies.length; i++) {
+        if (trophies[i].id === id) { earnedRow = trophies[i]; break; }
+      }
+      caption.hidden = false;
+      caption.innerHTML =
+        '<p class="trophy-cap-kicker">' + (earnedRow ? "Earned" : "Locked") + "</p>" +
+        '<p class="trophy-cap-title">' + escapeHtml(def.title) + "</p>" +
+        '<p class="trophy-cap-body">' + escapeHtml(def.how || "") +
+        (earnedRow && earnedRow.earned ? (" · " + escapeHtml(prettyDate(earnedRow.earned))) : "") +
+        "</p>";
+    }
+    if (active && !silent && active.scrollIntoView) {
+      active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function bindTrophyShelf() {
+    var list = document.getElementById("trophy-shelf");
+    if (!list || list.getAttribute("data-bound")) return;
+    list.setAttribute("data-bound", "1");
+    list.addEventListener("click", function (e) {
+      var card = e.target.closest ? e.target.closest(".trophy-card") : null;
+      if (!card) return;
+      focusTrophyCard(card.getAttribute("data-id"), false);
+    });
+    list.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var card = e.target.closest ? e.target.closest(".trophy-card") : null;
+      if (!card) return;
+      e.preventDefault();
+      focusTrophyCard(card.getAttribute("data-id"), false);
+    });
   }
 
   var toastTimer = null;
