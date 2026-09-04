@@ -100,11 +100,17 @@ The shelf sits in the shared chrome (visible on both tabs). A short non-blocking
 Seeded trophies (titles match `TROPHY_DEFS` in `preview/app.js`):
 
 - **First trick** — land any kneeboard trick
-- **Lake opener** — open your season (currently awarded on first land; how-to still says calendar year)
+- **Lake opener** — first land in the current calendar year
 - **First hard** — land a hard-band kneeboard trick
 - **First heli** — land Heli (`kb-heli`)
 - **Hard x5** — log the same hard trick five times
 - **First photo** — share a photo or clip on a landed trick
+- **Full easy** — land every catalog easy kneeboard trick
+- **Full hard** — land every catalog hard kneeboard trick
+- **First write-in** — land a custom write-in kneeboard trick
+- **Photo on hard** — share a photo on a landed hard-band trick
+- **Ten tricks** — land ten distinct kneeboard tricks
+- **Same day ×3** — land three or more on one calendar day
 - **Score 50 / 75 / 100** — post a slalom set at or above that Score
 
 Each trophy stores `id`, `title`, and earned date.

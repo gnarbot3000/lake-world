@@ -95,6 +95,12 @@
     { id: "first-heli", title: "First heli", how: "Land the Heli (wake 360, handle pass).", icon: "heli" },
     { id: "five-hard", title: "Hard x5", how: "Log the same hard trick five times.", icon: "stack" },
     { id: "first-media", title: "First photo", how: "Share a photo or clip on a landed trick.", icon: "camera" },
+    { id: "full-easy", title: "Full easy", how: "Land every catalog easy kneeboard trick.", icon: "fulleasy" },
+    { id: "full-hard", title: "Full hard", how: "Land every catalog hard kneeboard trick.", icon: "fullhard" },
+    { id: "first-write-in", title: "First write-in", how: "Land a custom write-in kneeboard trick.", icon: "writein" },
+    { id: "photo-on-hard", title: "Photo on hard", how: "Share a photo on a landed hard-band trick.", icon: "camhard" },
+    { id: "ten-tricks", title: "Ten tricks", how: "Land ten distinct kneeboard tricks.", icon: "ten" },
+    { id: "same-day-3", title: "Same day ×3", how: "Log three or more lands on one calendar day.", icon: "sameday" },
     { id: "score-50", title: "Score 50", how: "Post a slalom set with Score of 50 or higher.", icon: "score50", threshold: 50 },
     { id: "score-75", title: "Score 75", how: "Post a slalom set with Score of 75 or higher.", icon: "score75", threshold: 75 },
     { id: "score-100", title: "Score 100", how: "Post a slalom set with Score of 100 or higher.", icon: "score100", threshold: 100 }
@@ -983,29 +989,133 @@
     return row;
   }
 
+  function entryLandDates(entry) {
+    if (!entry) return [];
+    if (entry.dates && entry.dates.length) return entry.dates.slice();
+    if (entry.firstDate) return [entry.firstDate];
+    return [];
+  }
+
+  function maxISO(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    return a > b ? a : b;
+  }
+
+  function yearPrefix() {
+    return String(new Date().getFullYear()) + "-";
+  }
+
+  function trickHasMediaNow(sport, trickId) {
+    var key = mediaKey(sport, trickId);
+    if (memoryMedia[key] && memoryMedia[key].blob) return true;
+    var legacy = legacyMediaKey(sport, trickId);
+    if (memoryMedia[legacy] && memoryMedia[legacy].blob) return true;
+    var logId = hostedLogIdForTrick(sport, trickId);
+    if (logId && photoMetaByLogId[logId] && photoMetaByLogId[logId].object_path) return true;
+    return false;
+  }
+
   function scanLogbook() {
     var out = {
       anyLand: false,
       earliest: null,
+      yearEarliest: null,
       earliestHard: null,
       heliDate: null,
-      fiveDate: null
+      fiveDate: null,
+      fullEasyDate: null,
+      fullHardDate: null,
+      writeInDate: null,
+      photoHardDate: null,
+      tenDate: null,
+      sameDay3Date: null,
+      distinctLanded: 0
     };
+    var yPref = yearPrefix();
+    var easyNeeded = 0;
+    var easyLanded = 0;
+    var easyComplete = null;
+    var hardNeeded = 0;
+    var hardLanded = 0;
+    var hardComplete = null;
+    var dayCounts = {};
+    var landedFirsts = [];
+    var i;
+    var d;
+    var j;
+
+    for (i = 0; i < KNEEBOARD.length; i++) {
+      if (KNEEBOARD[i].mode === "hard") hardNeeded++;
+      else easyNeeded++;
+    }
+
     var items = itemsFor("kneeboard");
-    for (var i = 0; i < items.length; i++) {
+    for (i = 0; i < items.length; i++) {
       var item = items[i];
       var entry = getEntry("kneeboard", item.id);
       if (!isLanded(entry)) continue;
       out.anyLand = true;
       out.earliest = minISO(out.earliest, entry.firstDate);
+      if (entry.firstDate && entry.firstDate.indexOf(yPref) === 0) {
+        out.yearEarliest = minISO(out.yearEarliest, entry.firstDate);
+      }
+      out.distinctLanded++;
+      landedFirsts.push(entry.firstDate || todayISO());
+
+      var dates = entryLandDates(entry);
+      for (j = 0; j < dates.length; j++) {
+        d = dates[j];
+        if (!d) continue;
+        dayCounts[d] = (dayCounts[d] || 0) + 1;
+        if (d.indexOf(yPref) === 0) {
+          out.yearEarliest = minISO(out.yearEarliest, d);
+        }
+      }
+
+      if (item.custom) {
+        out.writeInDate = minISO(out.writeInDate, entry.firstDate);
+      }
+
       if (item.id === "kb-heli") out.heliDate = entry.firstDate || todayISO();
-      if (modeOf("kneeboard", item.id) === "hard") {
+
+      var mode = modeOf("kneeboard", item.id);
+      if (mode === "hard") {
         out.earliestHard = minISO(out.earliestHard, entry.firstDate);
         var n = landCount(entry);
         if (n >= 5) {
           var fifth = (entry.dates && entry.dates[4]) ? entry.dates[4] : entry.firstDate;
           out.fiveDate = minISO(out.fiveDate, fifth);
         }
+        if (trickHasMediaNow("kneeboard", item.id)) {
+          out.photoHardDate = minISO(out.photoHardDate, entry.firstDate || todayISO());
+        }
+      }
+
+      /* catalog full-easy / full-hard — only KNEEBOARD items, not write-ins */
+      if (!item.custom) {
+        var catMode = item.mode === "hard" ? "hard" : "easy";
+        if (catMode === "easy") {
+          easyLanded++;
+          easyComplete = maxISO(easyComplete, entry.firstDate);
+        } else {
+          hardLanded++;
+          hardComplete = maxISO(hardComplete, entry.firstDate);
+        }
+      }
+    }
+
+    if (easyNeeded && easyLanded >= easyNeeded) out.fullEasyDate = easyComplete;
+    if (hardNeeded && hardLanded >= hardNeeded) out.fullHardDate = hardComplete;
+
+    if (out.distinctLanded >= 10) {
+      landedFirsts.sort();
+      out.tenDate = landedFirsts[9] || landedFirsts[landedFirsts.length - 1];
+    }
+
+    for (d in dayCounts) {
+      if (Object.prototype.hasOwnProperty.call(dayCounts, d) && dayCounts[d] >= 3) {
+        out.sameDay3Date = minISO(out.sameDay3Date, d);
       }
     }
     return out;
@@ -1018,10 +1128,17 @@
     var scan = scanLogbook();
     var newly = [];
     var row;
+    var photoHardFromOpts = false;
+    if (opts.hasMedia && opts.trickId) {
+      var optSport = opts.sport || "kneeboard";
+      if (modeOf(optSport, opts.trickId) === "hard") photoHardFromOpts = true;
+    }
     if (scan.anyLand) {
       row = awardTrophy("first-trick", scan.earliest);
       if (row) newly.push(row);
-      row = awardTrophy("lake-opener", scan.earliest);
+    }
+    if (scan.yearEarliest) {
+      row = awardTrophy("lake-opener", scan.yearEarliest);
       if (row) newly.push(row);
     }
     if (scan.earliestHard) {
@@ -1038,6 +1155,30 @@
     }
     if (p.hasMedia) {
       row = awardTrophy("first-media", todayISO());
+      if (row) newly.push(row);
+    }
+    if (photoHardFromOpts || scan.photoHardDate) {
+      row = awardTrophy("photo-on-hard", todayISO());
+      if (row) newly.push(row);
+    }
+    if (scan.fullEasyDate) {
+      row = awardTrophy("full-easy", scan.fullEasyDate);
+      if (row) newly.push(row);
+    }
+    if (scan.fullHardDate) {
+      row = awardTrophy("full-hard", scan.fullHardDate);
+      if (row) newly.push(row);
+    }
+    if (scan.writeInDate) {
+      row = awardTrophy("first-write-in", scan.writeInDate);
+      if (row) newly.push(row);
+    }
+    if (scan.tenDate) {
+      row = awardTrophy("ten-tricks", scan.tenDate);
+      if (row) newly.push(row);
+    }
+    if (scan.sameDay3Date) {
+      row = awardTrophy("same-day-3", scan.sameDay3Date);
       if (row) newly.push(row);
     }
     var best = bestSet(p);
@@ -1100,7 +1241,7 @@
   function paintSlalomBest() {
     var num = document.getElementById("slalom-best-number");
     var setup = document.getElementById("slalom-best-setup");
-    var chartEl = document.getElementById("slalom-best-chart");
+    var chartEl = document.getElementById("slalom-best-score");
     var best = bestSet();
     if (num) num.textContent = best ? formatBuoys(best.buoys) : "—";
     if (setup) setup.textContent = best ? setupShort(best) : "";
@@ -1164,6 +1305,56 @@
         '<circle cx="32" cy="36" r="3.2" fill="' + stroke + '"/>' +
         '</svg>';
     }
+    if (icon === "fulleasy") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M16 34c6-8 12-12 20-8" fill="none" stroke="' + stroke + '" stroke-width="2.6" stroke-linecap="round"/>' +
+        '<path d="M18 42h28" stroke="' + navy + '" stroke-width="2.2" stroke-linecap="round"/>' +
+        '<path d="M22 24l4 4 8-9" fill="none" stroke="' + gold + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+    if (icon === "fullhard") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M14 44l10-18 6 10 6-14 14 22H14z" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M32 18c4 5 9 8 9 15a9 9 0 1 1-18 0c0-4 2.5-7 4.5-9 1 3 2.5 4.5 4.5 4.5 0-4 0-7 0-10.5z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.4" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+    if (icon === "writein") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<path d="M18 42l2.5-9L38 15.5 44 21.5 26.5 40 18 42z" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="M34.5 19l6 6" stroke="' + stroke + '" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="M16 48h32" stroke="' + navy + '" stroke-width="2" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+    if (icon === "camhard") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<rect x="14" y="26" width="30" height="20" rx="5" fill="' + (earned ? "#28203C" : "#C5CCD6") + '"/>' +
+        '<path d="M20 26l2.5-4h11l2.5 4" fill="' + gold + '"/>' +
+        '<circle cx="29" cy="36" r="5.5" fill="' + soft + '" stroke="' + stroke + '" stroke-width="2"/>' +
+        '<path d="M46 18c3 4 7 6 7 12a7 7 0 1 1-14 0c0-3 2-5 3.5-7 .7 2.5 1.8 3.5 3.5 3.5 0-3 0-5.5 0-8.5z" fill="' + fill + '" stroke="' + navy + '" stroke-width="1.3" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+    if (icon === "ten") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<circle cx="32" cy="32" r="16" fill="' + gold + '" stroke="' + navy + '" stroke-width="1.8"/>' +
+        '<text x="32" y="37.5" text-anchor="middle" font-size="16" font-weight="800" fill="' + navy + '" font-family="system-ui,sans-serif">10</text>' +
+        '</svg>';
+    }
+    if (icon === "sameday") {
+      return '<svg' + common + '>' +
+        '<rect x="6" y="6" width="52" height="52" rx="14" fill="' + soft + '"/>' +
+        '<rect x="16" y="18" width="32" height="30" rx="5" fill="' + (earned ? "#FFF7EC" : "#F4F6F8") + '" stroke="' + navy + '" stroke-width="1.8"/>' +
+        '<path d="M16 26h32" stroke="' + stroke + '" stroke-width="2"/>' +
+        '<path d="M22 16v6M42 16v6" stroke="' + navy + '" stroke-width="2.2" stroke-linecap="round"/>' +
+        '<circle cx="24" cy="36" r="2.4" fill="' + fill + '"/>' +
+        '<circle cx="32" cy="36" r="2.4" fill="' + fill + '"/>' +
+        '<circle cx="40" cy="36" r="2.4" fill="' + fill + '"/>' +
+        '</svg>';
+    }
     if (/^score\d+$/.test(icon)) {
       var label = icon.replace("score", "");
       return '<svg' + common + '>' +
@@ -1185,7 +1376,6 @@
 
   function paintShelf() {
     var list = document.getElementById("trophy-shelf");
-    var empty = document.getElementById("trophy-empty");
     var caption = document.getElementById("trophy-caption");
     if (!list) return;
     var earnedMap = {};
@@ -1194,7 +1384,6 @@
     for (i = 0; i < trophies.length; i++) {
       earnedMap[trophies[i].id] = trophies[i];
     }
-    if (empty) empty.hidden = true;
     var html = "";
     var focusId = "";
     for (i = 0; i < TROPHY_DEFS.length; i++) {
@@ -1907,7 +2096,7 @@
     }).then(function () {
       setPhotoButtonState(btn, true);
       showToast("log", "Photo shared with your club");
-      afterProgress({ hasMedia: true });
+      afterProgress({ hasMedia: true, sport: sport, trickId: trickId });
       afterHostChange();
       renderSport(sport);
       if (typeof onSaved === "function") onSaved(logId);
@@ -2152,10 +2341,13 @@
     var q = kbQuery;
     var html = "";
     var i;
+    var form = document.querySelector(".kb-search");
+    var miss = false;
     if (q) {
       var hits = searchTricks(q);
       html += '<li class="trick-group">Search</li>';
       if (!hits.length) {
+        miss = true;
         html += '<li class="trick-item"><div class="trick-main"><span class="name">No hive match. Log it to add a write-in.</span></div></li>';
       } else {
         for (i = 0; i < hits.length && i < 8; i++) html += renderTrickRow(hits[i], sport);
@@ -2177,6 +2369,7 @@
       }
     }
     list.innerHTML = html;
+    if (form) form.classList.toggle("is-emphasize", miss);
     updateProgress(sport);
     fillTrickPhotos(sport);
   }
@@ -2446,7 +2639,7 @@
       html += '<div class="session-cols">';
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
-      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      html += '<span class="board-score">' + escapeHtml(chartText(r.set)) + "</span>";
       html += '<span class="' + deltaClass + '">' + escapeHtml(formatDelta(delta)) + "</span>";
       html += "</div></li>";
     }
@@ -2495,7 +2688,7 @@
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.set.date)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(r.set)) + "</span>";
-      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      html += '<span class="board-score">' + escapeHtml(chartText(r.set)) + "</span>";
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -2558,7 +2751,7 @@
       html += '<span class="board-rank">' + (eligible ? String(rank) : "—") + "</span>";
       html += '<span class="board-name">' + escapeHtml(displayName(r.person)) + "</span>";
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.date)) + "</span>";
-      html += '<span class="board-chart">' + escapeHtml(chartText(r.set)) + "</span>";
+      html += '<span class="board-score">' + escapeHtml(chartText(r.set)) + "</span>";
       if (eligible) {
         html += '<span class="board-delta' + (r.delta > 0 ? " is-up" : "") + '">' +
           escapeHtml(formatDelta(r.delta)) + "</span>";
@@ -2605,7 +2798,7 @@
       html += '<span class="board-name">' + escapeHtml(displayName({ name: r.personName })) + "</span>";
       html += '<span class="board-date">' + escapeHtml(prettyDateShort(r.date)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(r)) + "</span>";
-      html += '<span class="board-chart">' + escapeHtml(chartText(r)) + "</span>";
+      html += '<span class="board-score">' + escapeHtml(chartText(r)) + "</span>";
       html += "</div></li>";
     }
     list.innerHTML = html;
@@ -2684,7 +2877,7 @@
       html += '<div class="set-cols">';
       html += '<span class="set-date">' + escapeHtml(prettyDate(s.date)) + "</span>";
       html += '<span class="board-pass">' + escapeHtml(passLabel(s)) + "</span>";
-      html += '<span class="board-chart">' + escapeHtml(chartText(s)) + "</span>";
+      html += '<span class="board-score">' + escapeHtml(chartText(s)) + "</span>";
       html += "</div>";
       html += '<button type="button" class="set-delete" data-act="delete-set" data-id="' +
         escapeHtml(s.id) + '">Delete set</button>';
@@ -2891,7 +3084,7 @@
       var slot = el.closest(".media-slot");
       putMedia(key, rec, function (err) {
         paintMedia(slot, rec, err ? "Saved a preview, but this browser couldn’t keep the file (too large or storage full). Try a smaller clip." : "");
-        afterProgress({ hasMedia: true });
+        afterProgress({ hasMedia: true, sport: sport, trickId: id });
       });
     }
 
