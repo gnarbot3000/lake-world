@@ -1,2 +1,4 @@
 /preview/* /app/:splat 301
 /app/index.html /app/ 301
+/app/admin.html /app/club/ 301
+/app/club/index.html /app/club/ 301
