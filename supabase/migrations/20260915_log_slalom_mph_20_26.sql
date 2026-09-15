@@ -1,8 +1,13 @@
 -- Match PR 27 UI speeds: allow 20–26 mph on hosted slalom logs.
+-- Target: lake.world Supabase project zejficslgaqryxrndfqi only.
 -- Apply in the lake.world Supabase SQL editor after JT skim + Joel says ship.
--- Does not change offs, buoys rules, or other RPCs.
+-- Widens both slalom_logs_mph_chk and log_slalom_set. Offs/buoys unchanged.
 
 begin;
+
+alter table public.slalom_logs drop constraint if exists slalom_logs_mph_chk;
+alter table public.slalom_logs
+  add constraint slalom_logs_mph_chk check (mph in (20, 22, 24, 26, 28, 30, 32, 34, 36));
 
 create or replace function public.log_slalom_set(
   p_id uuid, p_member_id uuid, p_off integer, p_mph integer, p_buoys numeric, p_club_id uuid
