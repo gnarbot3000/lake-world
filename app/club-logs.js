@@ -56,7 +56,7 @@
   }
 
   function chartScore(row) {
-    var speeds = [28, 30, 32, 34, 36];
+    var speeds = [20, 22, 24, 26, 28, 30, 32, 34, 36];
     var lines = [15, 22, 28, 32];
     var speed = speeds.indexOf(parseInt(row.mph, 10));
     var line = lines.indexOf(parseInt(row.off, 10));
