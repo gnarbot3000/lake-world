@@ -50,9 +50,9 @@
   var CATALOGS = { kneeboard: KNEEBOARD };
 
   var SLALOM_OFFS = [15, 22, 28, 32];
-  var SLALOM_MPHS = [28, 30, 32, 34, 36];
+  var SLALOM_MPHS = [20, 22, 24, 26, 28, 30, 32, 34, 36];
   var LINE_METERS = { 0: "23 m", 15: "18.25 m", 22: "16 m", 28: "14.25 m", 32: "13 m" };
-  var MPH_TO_KPH = { 28: 46, 30: 49, 32: 52, 34: 55, 36: 58 };
+  var MPH_TO_KPH = { 20: 32, 22: 35, 24: 39, 26: 42, 28: 46, 30: 49, 32: 52, 34: 55, 36: 58 };
   var BUOY_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6];
   var DEFAULT_PASS = { off: 15, mph: 28 };
 
