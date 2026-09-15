@@ -2400,6 +2400,16 @@
     return (person && person.memberId) || "";
   }
 
+  function clubPushFail(res) {
+    var msg = (res && res.error) || (res && res.message) || "Club log failed.";
+    console.warn("club push failed", res);
+    showToast("", String(msg));
+  }
+
+  function afterClubPush(res) {
+    if (res && res.ok === false) clubPushFail(res);
+  }
+
   function pushSlalomLog(person, row) {
     if (!hostEnabled() || !row || !isUuid(row.id)) return;
     var mid = memberIdFor(person);
@@ -2411,7 +2421,7 @@
       mph: row.mph,
       buoys: row.buoys,
       clubId: clubState().clubId
-    }).catch(function () {});
+    }).then(afterClubPush).catch(clubPushFail);
   }
 
   function dropSlalomLog(id) {
@@ -2445,7 +2455,7 @@
       mode: mode === "hard" ? "hard" : "easy",
       loggedAt: kneeboardLoggedAt(day),
       clubId: clubState().clubId
-    }).catch(function () {});
+    }).then(afterClubPush).catch(clubPushFail);
   }
 
   function hostUpdateKneeboard(person, entry, index, trickName, mode) {
@@ -2461,7 +2471,7 @@
       mode: mode === "hard" ? "hard" : "easy",
       loggedAt: kneeboardLoggedAt(day),
       clubId: clubState().clubId
-    }).catch(function () {});
+    }).then(afterClubPush).catch(clubPushFail);
   }
 
   function hostDropKneeboardEntry(entry) {

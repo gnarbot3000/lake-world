@@ -22,7 +22,7 @@
     not_found: "Could not find that member.",
     bad_status: "That status is not allowed.",
     not_your_log: "You can only log your sets and your juniors.",
-    bad_set: "That slalom set is not valid.",
+    bad_set: "That slalom set is not valid (check boat speed, line, or buoys).",
     bad_trick: "That kneeboard trick is not valid.",
     bad_comment: "Type a short comment (280 characters or fewer).",
     not_your_comment: "You can only delete your own comment.",
