@@ -87,7 +87,24 @@
     if (inviteOnly) inviteOnly.hidden = true;
     if (note) note.hidden = signedIn || c.status === "approved";
     var adminLink = $("mast-admin-link");
-    if (adminLink) adminLink.hidden = !(c.status === "approved");
+    if (adminLink) {
+      adminLink.hidden = !(c.status === "approved");
+      if (c.status === "approved") {
+        adminLink.textContent = "Club board";
+        if (c.clubName) adminLink.setAttribute("aria-label", "Open the " + c.clubName + " club board");
+      }
+    }
+    var clubLine = $("mast-club-line");
+    if (clubLine) {
+      var named = signedIn && c.clubName &&
+        (c.status === "approved" || c.status === "pending" || c.status === "denied");
+      clubLine.hidden = !named;
+      if (named) {
+        if (c.status === "pending") clubLine.textContent = "Waiting · " + c.clubName;
+        else if (c.status === "denied") clubLine.textContent = "Not approved · " + c.clubName;
+        else clubLine.textContent = "Club · " + c.clubName;
+      }
+    }
     var pendingCopy = pending && pending.querySelector(".legend");
     if (pendingCopy && c.clubName) {
       pendingCopy.textContent = "You are signed in. An admin of " + c.clubName +

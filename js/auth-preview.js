@@ -59,6 +59,15 @@
     }
   }
 
+  function stayOnMini() {
+    try {
+      var q = new URLSearchParams(location.search || "");
+      if (q.get("mini") === "1") return true;
+      if (q.get("log")) return true;
+    } catch (err) {}
+    return false;
+  }
+
   function boot() {
     window.LAKE_USER_ID = window.LAKE_USER_ID || "";
     window.LAKE_USER_EMAIL = window.LAKE_USER_EMAIL || "";
@@ -99,6 +108,10 @@
     }).then(function (state) {
       if (!state) return;
       window.LAKE_CLUB = state;
+      if (state.status === "approved" && !stayOnMini()) {
+        location.replace("club/");
+        return;
+      }
       loadApp();
     });
   }

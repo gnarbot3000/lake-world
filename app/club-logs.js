@@ -140,6 +140,29 @@
     this._lightboxBound = false;
   }
 
+  ClubLogs.prototype.myMemberIds = function () {
+    var ids = {};
+    var club = w.LAKE_CLUB || {};
+    var me = club.me;
+    if (me && me.id) ids[String(me.id)] = true;
+    var juniors = club.juniors || [];
+    var i;
+    for (i = 0; i < juniors.length; i++) {
+      if (juniors[i] && juniors[i].id) ids[String(juniors[i].id)] = true;
+    }
+    return ids;
+  };
+
+  ClubLogs.prototype.isMine = function (row) {
+    var ids = this.myMemberIds();
+    return !!(row && ids[String(row.member_id || "")]);
+  };
+
+  ClubLogs.prototype.isSelf = function (row) {
+    var me = (w.LAKE_CLUB && w.LAKE_CLUB.me) || null;
+    return !!(row && me && me.id && String(row.member_id || "") === String(me.id));
+  };
+
   ClubLogs.prototype.setClub = function (sb, clubId) {
     this.sb = sb;
     if (this.clubId !== clubId) {
@@ -301,14 +324,16 @@
     });
   };
 
-  ClubLogs.prototype.rowHtml = function (row) {
+  ClubLogs.prototype.rowHtml = function (row, opts) {
     var kind = row.kind === "kneeboard" ? "kneeboard" : "slalom";
     var comments = Array.isArray(row.comments) ? row.comments : [];
     var isOpen = !!this.open[key(kind, row.id)];
-    var html = '<li class="board-row recency-row is-' + kind + '"><div class="recency-top">';
+    var mine = this.isSelf(row);
+    var html = '<li class="board-row recency-row is-' + kind + (mine ? " is-you" : "") + '"><div class="recency-top">';
     html += '<span class="recency-name-wrap">' +
-      '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span>' +
-      sportIcon(kind) + '</span>';
+      '<span class="board-name">' + escapeHtml(recencyName(row)) + '</span>';
+    if (mine && !(opts && opts.yours)) html += '<span class="recency-you">You</span>';
+    html += sportIcon(kind) + '</span>';
     html += '<span class="board-date">' + escapeHtml(prettyDateTime(row.logged_at)) + '</span></div>';
     html += '<div class="recency-detail"><div class="recency-facts">';
     if (kind === "kneeboard") html += '<span class="recency-trick">' + escapeHtml(row.trick_name || "") + '</span>';
@@ -423,14 +448,16 @@
   ClubLogs.prototype.leaderboardHtml = function (entry, rank, kind) {
     var memberId = String(entry.member_id || "");
     var expanded = this.expandedMemberId && this.expandedMemberId === memberId;
+    var mine = this.isSelf({ member_id: memberId });
     var html = '<li class="board-row club-lb-row is-' + (kind === "slalom" ? "slalom" : "kneeboard");
+    if (mine) html += " is-you";
     if (expanded) html += " is-expanded";
     html += '" data-member="' + escapeHtml(memberId) + '">';
     html += '<div class="club-lb-main">';
     html += '<span class="board-rank">' + rank + "</span>";
-    html += '<button type="button" class="board-name-btn" data-act="toggle-lb-member" data-member="' +
+      html += '<button type="button" class="board-name-btn" data-act="toggle-lb-member" data-member="' +
       escapeHtml(memberId) + '" aria-expanded="' + (expanded ? "true" : "false") + '">' +
-      escapeHtml(entry.display_name) + "</button>";
+      escapeHtml(entry.display_name) + (mine ? " (you)" : "") + "</button>";
     if (kind === "slalom") {
       html += '<span class="board-pass">' + escapeHtml(entry.pass) + "</span>";
       html += '<span class="board-score">Score ' + escapeHtml(entry.chart) + "</span>";
@@ -492,8 +519,16 @@
     var recentList = document.getElementById("club-recent-list");
     var recentEmpty = document.getElementById("club-recent-empty");
     var recentMore = document.getElementById("club-recent-more");
+    var yoursTitle = document.getElementById("club-yours-title");
+    var yoursList = document.getElementById("club-yours-list");
+    var yoursEmpty = document.getElementById("club-yours-empty");
+    var yoursMore = document.getElementById("club-yours-more");
+    var logSlalom = document.getElementById("log-day-slalom");
+    var logKnee = document.getElementById("log-day-kneeboard");
 
     var cat = this.category;
+    if (logSlalom) logSlalom.classList.toggle("is-quiet", cat === "kneeboard");
+    if (logKnee) logKnee.classList.toggle("is-quiet", cat !== "kneeboard");
     var showLb = cat === "slalom" || cat === "kneeboard";
     if (lbSection) lbSection.hidden = !showLb;
 
@@ -511,7 +546,14 @@
           return self.leaderboardHtml(entry, idx + 1, cat);
         }).join("");
       }
-      if (lbEmpty) lbEmpty.hidden = ranks.length > 0;
+      if (lbEmpty) {
+        lbEmpty.hidden = ranks.length > 0;
+        if (!ranks.length) {
+          lbEmpty.textContent = cat === "slalom"
+            ? "No slalom rankings yet. Log a set to get on the board."
+            : "No kneeboard rankings yet. Log a trick to get on the board.";
+        }
+      }
       if (lbMore) lbMore.hidden = ranks.length <= this.leaderboardLimit;
     } else {
       if (lbList) lbList.innerHTML = "";
@@ -530,8 +572,41 @@
     if (recentList) {
       recentList.innerHTML = shownRecent.map(function (row) { return self.rowHtml(row); }).join("");
     }
-    if (recentEmpty) recentEmpty.hidden = filtered.length > 0;
+    if (recentEmpty) {
+      recentEmpty.hidden = filtered.length > 0;
+      if (!filtered.length) {
+        recentEmpty.textContent = cat === "kneeboard"
+          ? "No kneeboard logs yet. Log kneeboard to add one."
+          : cat === "slalom"
+            ? "No slalom logs yet. Log slalom to add a set."
+            : "No logs yet. Log slalom or kneeboard to start this club’s board.";
+      }
+    }
     if (recentMore) recentMore.hidden = filtered.length <= this.recentLimit;
+
+    var yours = filtered.filter(function (row) { return self.isMine(row); });
+    var yoursShown = yours.slice(0, 5);
+    if (yoursTitle) {
+      yoursTitle.textContent = cat === "kneeboard"
+        ? "Your kneeboard logs"
+        : cat === "slalom"
+          ? "Your slalom logs"
+          : "Your recent logs";
+    }
+    if (yoursList) {
+      yoursList.innerHTML = yoursShown.map(function (row) { return self.rowHtml(row, { yours: true }); }).join("");
+    }
+    if (yoursEmpty) {
+      yoursEmpty.hidden = yours.length > 0;
+      if (!yours.length) {
+        yoursEmpty.textContent = cat === "kneeboard"
+          ? "You have not logged a kneeboard trick with this club yet."
+          : cat === "slalom"
+            ? "You have not logged a slalom set with this club yet."
+            : "You have not logged a day with this club yet.";
+      }
+    }
+    if (yoursMore) yoursMore.hidden = yours.length <= 5;
   };
 
   ClubLogs.prototype.load = function () {

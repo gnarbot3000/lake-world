@@ -47,9 +47,10 @@
         <span id="mast-user-email"></span>
         <label class="sr-only" for="club-select">Club</label>
         <select id="club-select" aria-label="Club" hidden></select>
-        <a class="mast-admin-link" id="mast-admin-link" href="club/" hidden>Club</a>
+        <a class="mast-admin-link" id="mast-admin-link" href="club/" hidden>Club board</a>
         <button type="button" id="signout-btn">Sign Out</button>
       </div>
+      <p class="mast-club-line" id="mast-club-line" hidden></p>
       <div class="mast-row mast-tools">
         <p class="stat-pill slalom-pill" id="slalom-score">
           <span class="stat-main" id="slalom-score-main">Slalom · —</span>
@@ -58,6 +59,12 @@
         <p class="stat-pill" id="person-score"><span class="stat-main">Score · 0</span></p>
       </div>
     </header>
+
+    <div class="log-day-bar" id="log-day-bar" hidden>
+      <p class="log-day-copy" id="log-day-copy"></p>
+      <p class="log-day-hint">Submit this set. You’ll come back to the club board.</p>
+      <a class="log-day-back" href="club/">Back to club</a>
+    </div>
 
     <nav class="sport-tabs" role="tablist" aria-label="Sports">
       <button type="button" class="tab is-active" role="tab" id="tab-slalom" aria-selected="true" aria-controls="panel-slalom" data-sport="slalom">Slalom</button>

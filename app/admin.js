@@ -186,7 +186,11 @@
       if (gate) {
         gate.hidden = false;
         var copy = $("admin-gate-copy");
-        if (copy) copy.textContent = "You're signed in and waiting for an admin to approve you. You cannot see the club yet.";
+        if (copy) {
+          copy.textContent = state.clubName
+            ? "You're signed in and waiting for an admin of " + state.clubName + " to approve you. You cannot see the club yet."
+            : "You're signed in and waiting for an admin to approve you. You cannot see the club yet.";
+        }
       }
       if (app) app.hidden = true;
       paintClubSwitch();
@@ -208,7 +212,15 @@
       if (gate) {
         gate.hidden = false;
         var copyN = $("admin-gate-copy");
-        if (copyN) copyN.textContent = "Pick a club on the Mini and request to join. An admin still has to approve you.";
+        if (copyN) {
+          copyN.textContent = "";
+          copyN.appendChild(document.createTextNode("Pick a club on the "));
+          var miniLink = document.createElement("a");
+          miniLink.href = "../";
+          miniLink.textContent = "Mini";
+          copyN.appendChild(miniLink);
+          copyN.appendChild(document.createTextNode(" and request to join. An admin still has to approve you."));
+        }
       }
       if (app) app.hidden = true;
       paintClubSwitch();
@@ -222,9 +234,10 @@
     var foot = document.querySelector("footer p");
     if (foot && state.clubName) foot.textContent = "lake.world · " + state.clubName;
     if (role) {
+      var clubLabel = state.clubName || "this club";
       role.textContent = state.isAdmin
-        ? "Club activity and rankings. Admin controls are below."
-        : "Club activity and rankings.";
+        ? "You're in " + clubLabel + ". Your logs and the club list are below. Admin controls follow."
+        : "You're in " + clubLabel + ". Your logs and the club list are below.";
     }
     paintPending();
     paintMembers();
@@ -311,7 +324,7 @@
   var signout = $("signout-btn");
   if (signout) {
     signout.addEventListener("click", function () {
-      var go = function () { location.href = "../index.html"; };
+      var go = function () { location.href = "../../index.html"; };
       if (!sb || !sb.auth) { go(); return; }
       sb.auth.signOut().then(go).catch(go);
     });

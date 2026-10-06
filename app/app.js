@@ -74,6 +74,52 @@
     return clubState().status === "approved";
   }
 
+  function logDaySport() {
+    try {
+      var q = new URLSearchParams(location.search || "");
+      var v = String(q.get("log") || "").toLowerCase();
+      if (v === "kneeboard" || v === "slalom") return v;
+      if (v === "1" || v === "day") return "slalom";
+    } catch (err) {}
+    return "";
+  }
+
+  var logDayLeaving = false;
+
+  function activeSport() {
+    var tab = document.querySelector(".sport-tabs .tab.is-active");
+    return tab && tab.getAttribute("data-sport") === "kneeboard" ? "kneeboard" : "slalom";
+  }
+
+  function paintLogDayBar() {
+    var bar = document.getElementById("log-day-bar");
+    if (!bar) return;
+    var mode = logDaySport();
+    var show = !!(mode && clubVisible());
+    bar.hidden = !show;
+    if (!show) return;
+    var copy = document.getElementById("log-day-copy");
+    if (!copy) return;
+    var sport = activeSport();
+    copy.textContent = (sport === "kneeboard" ? "Logging a kneeboard trick" : "Logging a slalom set") +
+      " for " + liveClubName();
+  }
+
+  function finishLogDay(promise) {
+    if (!logDaySport() || !promise || typeof promise.then !== "function" || logDayLeaving) return;
+    promise.then(function (res) {
+      if (logDayLeaving) return;
+      if (!res || res.ok === false) return;
+      logDayLeaving = true;
+      setTimeout(function () { location.href = "club/"; }, 1400);
+    }).catch(function () {});
+  }
+
+  function noteClubLog(label, newly) {
+    if (!logDaySport() || (newly && newly.length)) return;
+    showToast("log", "Logged " + label);
+  }
+
   function myMember() {
     return clubState().me || null;
   }
@@ -2404,17 +2450,19 @@
     var msg = (res && res.error) || (res && res.message) || "Club log failed.";
     console.warn("club push failed", res);
     showToast("", String(msg));
+    return { ok: false, error: String(msg) };
   }
 
   function afterClubPush(res) {
-    if (res && res.ok === false) clubPushFail(res);
+    if (res && res.ok === false) return clubPushFail(res);
+    return res;
   }
 
   function pushSlalomLog(person, row) {
-    if (!hostEnabled() || !row || !isUuid(row.id)) return;
+    if (!hostEnabled() || !row || !isUuid(row.id)) return null;
     var mid = memberIdFor(person);
-    if (!mid) return;
-    window.LakeClub.logSlalom(window.LAKE_SB, {
+    if (!mid) return null;
+    return window.LakeClub.logSlalom(window.LAKE_SB, {
       id: row.id,
       memberId: mid,
       off: row.off,
@@ -2441,14 +2489,14 @@
   }
 
   function hostPushKneeboardNew(person, entry, index, trickName, mode) {
-    if (!hostEnabled() || !entry) return;
+    if (!hostEnabled() || !entry) return null;
     var mid = memberIdFor(person);
-    if (!mid) return;
+    if (!mid) return null;
     if (!Array.isArray(entry.remoteIds)) entry.remoteIds = [];
     while (entry.remoteIds.length <= index) entry.remoteIds.push("");
     if (!isUuid(entry.remoteIds[index])) entry.remoteIds[index] = newUuid();
     var day = (entry.dates && entry.dates[index]) || todayISO();
-    window.LakeClub.logKneeboard(window.LAKE_SB, {
+    return window.LakeClub.logKneeboard(window.LAKE_SB, {
       id: entry.remoteIds[index],
       memberId: mid,
       trickName: trickName,
@@ -2517,11 +2565,12 @@
     p.slalomSets.unshift(row);
     renderHistory();
     renderBoards();
-    pushSlalomLog(p, row);
+    var slalomJob = pushSlalomLog(p, row);
     var newly = afterProgress();
     if (!newly.length) {
       showToast("log", "Logged " + formatBuoys(n) + " @ " + setupShort(pass));
     }
+    finishLogDay(slalomJob);
   }
 
   function deleteSet(id) {
@@ -2564,6 +2613,7 @@
     if (window.LakeClubUi && typeof window.LakeClubUi.paint === "function") {
       window.LakeClubUi.paint();
     }
+    paintLogDayBar();
   }
 
   function renderRoster() {
@@ -2915,6 +2965,7 @@
       if (show) panels[j].removeAttribute("hidden");
       else panels[j].setAttribute("hidden", "");
     }
+    paintLogDayBar();
   }
 
   function addJunior(raw) {
@@ -3048,16 +3099,21 @@
 
     if (act === "land" && el.type === "checkbox") {
       var entry = ensureEntry(sport, id);
+      var landJob = null;
       if (el.checked) {
         if (!isLanded(entry)) landNow(entry);
-        hostPushKneeboardNew(currentPerson(), entry, 0, trickNameOf(sport, id), modeOf(sport, id));
+        landJob = hostPushKneeboardNew(currentPerson(), entry, 0, trickNameOf(sport, id), modeOf(sport, id));
       } else {
         hostDropKneeboardEntry(entry);
         clearLand(entry);
         entry.remoteIds = [];
       }
-      afterProgress();
+      var landNewly = afterProgress();
       renderSport(sport);
+      if (landJob) {
+        noteClubLog(trickNameOf(sport, id), landNewly);
+        finishLogDay(landJob);
+      }
       return;
     }
 
@@ -3206,9 +3262,11 @@
         syncCount(entryA);
         idxA = entryA.dates.length - 1;
       }
-      hostPushKneeboardNew(currentPerson(), entryA, idxA, trickNameOf(sport, id), modeOf(sport, id));
-      afterProgress();
+      var againJob = hostPushKneeboardNew(currentPerson(), entryA, idxA, trickNameOf(sport, id), modeOf(sport, id));
+      var againNewly = afterProgress();
       renderSport(sport);
+      noteClubLog(trickNameOf(sport, id), againNewly);
+      finishLogDay(againJob);
       return;
     }
 
@@ -3261,16 +3319,21 @@
       var existing = findTrickByName(name);
       if (existing) {
         var already = getEntry(sport, existing.id);
+        var existingJob = null;
         if (!isLanded(already)) {
           var entryE = ensureEntry(sport, existing.id);
           landNow(entryE);
-          hostPushKneeboardNew(currentPerson(), entryE, 0, existing.name, modeOf(sport, existing.id));
+          existingJob = hostPushKneeboardNew(currentPerson(), entryE, 0, existing.name, modeOf(sport, existing.id));
         }
         kbQuery = "";
-        afterProgress();
+        var existingNewly = afterProgress();
         field.value = "";
         renderSport(sport);
         field.focus();
+        if (existingJob) {
+          noteClubLog(existing.name, existingNewly);
+          finishLogDay(existingJob);
+        }
         return;
       }
       var band = workingBand();
@@ -3286,12 +3349,14 @@
       var entry = ensureEntry(sport, custom.id);
       entry.mode = mode;
       landNow(entry);
-      hostPushKneeboardNew(currentPerson(), entry, 0, name, mode);
+      var writeJob = hostPushKneeboardNew(currentPerson(), entry, 0, name, mode);
       kbQuery = "";
-      afterProgress();
+      var writeNewly = afterProgress();
       field.value = "";
       renderSport(sport);
       field.focus();
+      noteClubLog(name, writeNewly);
+      finishLogDay(writeJob);
     });
   }
 
@@ -3383,7 +3448,7 @@
 
   paintClubChrome();
   paintNameField();
-  switchSport("slalom");
+  switchSport(logDaySport() === "kneeboard" ? "kneeboard" : "slalom");
   renderAll();
   currentPerson().score = computeScore();
   paintUnits();
