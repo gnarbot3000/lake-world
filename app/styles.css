@@ -114,6 +114,13 @@ body {
   gap: 0.55rem;
 }
 .mast-auth[hidden] { display: none; }
+.mast-club-line {
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+.mast-club-line[hidden] { display: none; }
 #mast-user-email {
   min-width: 0;
   overflow: hidden;
@@ -291,6 +298,10 @@ main { padding: 0.75rem 1rem 0; }
   color: var(--mute);
   font-size: 0.92rem;
   line-height: 1.35;
+}
+.legend a {
+  color: var(--chip);
+  font-weight: 800;
 }
 
 /* ---- kneeboard rows ---- */
@@ -2082,6 +2093,72 @@ body.photo-lightbox-open { overflow: hidden; }
 
 
 /* ---- Club page category + dense activity ---- */
+.log-day-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin: 0.15rem 0 0.35rem;
+}
+.log-day-actions .btn-primary {
+  margin-top: 0;
+  width: 100%;
+  text-decoration: none;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  padding: 0 0.45rem;
+}
+.log-day-actions .btn-primary.is-quiet {
+  background: var(--navy);
+  color: var(--on-navy);
+}
+.log-day-bar {
+  margin: 0.75rem 1rem 0;
+  padding: 0.75rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.log-day-bar[hidden] { display: none; }
+.log-day-copy {
+  margin: 0;
+  font-weight: 800;
+  color: var(--navy);
+}
+.log-day-hint {
+  margin: 0;
+  color: var(--mute);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.log-day-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 2px solid var(--navy);
+  border-radius: 12px;
+  color: var(--navy);
+  font-weight: 800;
+  text-decoration: none;
+}
+.log-day-back:hover { background: var(--track); }
+.recency-you {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--navy);
+}
+@media (max-width: 360px) {
+  .log-day-actions { grid-template-columns: 1fr; }
+}
 .club-cats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

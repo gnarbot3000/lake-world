@@ -3,7 +3,7 @@
 Brand is **lake.world** (not “Lake World”). Email/password on the splash (lake.world Supabase project `zejficslgaqryxrndfqi`, not TurnKay). Preview still works as a guest demo.
 
 - `index.html` — public splash (hibala-style drifting watersports wall + Sign In + Open app).
-- `app/` — slalom/kneeboard log. Guest is this-device localStorage; a signed-in **approved** member sees the club they joined (switcher if they belong to more than one).
+- `app/` — slalom/kneeboard log (the Mini). Guest is this-device localStorage; a signed-in **approved** member sees the club they joined (switcher if they belong to more than one). Signing in lands on that club’s board (`app/club/`). The personal Mini stays at `app/?mini=1`.
 - `invite.html` — one-time named invite landing (`?token=`).
 - `app/club/` — admins approve/deny join requests and add/remove admins.
 - `supabase/migrations/` — SQL for Darin to paste into the **lake.world** SQL editor. Do not run it against vinyl-archive.
