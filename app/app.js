@@ -2537,6 +2537,21 @@
     btn.disabled = parseBuoys(draftBuoys) == null;
   }
 
+  // After a buoy pick on a phone, Submit can sit just below the fold.
+  // Scroll it into view only when it is not already fully visible.
+  function revealSubmitSet() {
+    var btn = document.getElementById("submit-set-btn");
+    if (!btn || btn.disabled || !btn.getBoundingClientRect) return;
+    var r = btn.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    if (r.top >= 0 && r.bottom <= vh - 8) return;
+    try {
+      btn.scrollIntoView({ block: "end", behavior: "smooth" });
+    } catch (err) {
+      btn.scrollIntoView(false);
+    }
+  }
+
   function logSet(buoys) {
     var p = currentPerson();
     if (!canLogFor(p)) {
@@ -3185,6 +3200,7 @@
     if (act === "select-buoys") {
       draftBuoys = parseBuoys(btn.getAttribute("data-n"));
       renderSlalom();
+      revealSubmitSet();
       return;
     }
     if (act === "submit-set") {
