@@ -743,6 +743,7 @@ input[type="date"] {
 
 #submit-set-btn {
   margin-top: 0.75rem;
+  scroll-margin-bottom: 1rem;
 }
 #submit-set-btn:disabled {
   opacity: 0.45;
