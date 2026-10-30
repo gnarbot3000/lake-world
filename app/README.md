@@ -31,7 +31,7 @@ Who is skiing is a **dropdown** in the header. Approved members log **their own*
 
 **Join:** create an account on the splash with email + password (auto-confirm, no email verification). Signed-in users with no membership pick a club from `public.clubs` (Ski Paradise Cleveland, Adams Lake, Ski Pond), enter a display name, and tap **Request to join**. That creates a pending adult member. An admin approves or denies on `app/club/`. Later logins use that member row’s club (`my_club_state(p_club_id)`: saved club if they belong, else approved then pending then denied). Pending signed-in users must not see the club roster.
 
-**Juniors** have no email. An approved member adds a junior in Settings (name only). The junior is pending, tied to that parent, until an admin approves. After approval they show in that parent’s dropdown as `Owen Hageman (junior)`. Do not require the junior to click a link.
+**Juniors** have no email. An approved member adds a junior in Settings (name only). The junior is pending, tied to that parent, until an admin approves. After approval they show in that parent’s dropdown as `Sam Example (junior)`. Do not require the junior to click a link.
 
 **Temporary admin:** `joel.hageman@gmail.com` is admin and an approved member named Joel Hageman on all three clubs. SQL seeds that if the auth user exists; otherwise `ensure_temp_admin()` on login backfills only those three named clubs. `claim_first_admin()` still claims Ski Paradise Cleveland if it has no admins. Do not hardcode extra admin emails. Non-admin members cannot approve.
 
