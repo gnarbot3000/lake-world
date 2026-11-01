@@ -70,6 +70,8 @@ body {
 .mast-row + .mast-row { margin-top: 0.5rem; }
 
 .brand {
+  color: inherit;
+  text-decoration: none;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -1129,6 +1131,7 @@ input:focus-visible {
   font-size: 0.92rem;
   font-weight: 600;
 }
+.club-signin-note a { color: #b83d00; }
 .club-signin-note[hidden],
 #junior-block[hidden] { display: none; }
 
