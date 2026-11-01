@@ -17,6 +17,7 @@
   <meta property="og:image:height" content="400">
   <meta name="twitter:card" content="summary">
   <title>lake.world: log slalom, tricks and club days</title>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"lake.world","url":"https://lake.world/","applicationCategory":"SportsApplication","operatingSystem":"Web","description":"Log your days on the lake: slalom passes, tricks, kneeboard and club boards with leaderboards for your ski club."}</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="js/ga.js"></script>
@@ -186,6 +187,7 @@
       font-size: 0.95rem;
     }
     #signup-btn:hover { background: rgba(20,20,20,.45); }
+    .hero .hero-more { margin: 18px auto 0; max-width: 34em; font-size: .85rem; line-height: 1.45; color: rgba(255,255,255,.72); }
     .preview-link {
       display: inline-block;
       margin-top: 14px;
@@ -242,14 +244,15 @@
       <p>Slalom, tricks, club boards.</p>
       <form id="login-form">
         <div class="auth-row">
-          <input type="email" id="email" name="email" placeholder="Email" required autocomplete="username">
-          <input type="password" id="password" name="password" placeholder="Password" required minlength="6" autocomplete="current-password">
+          <input type="email" id="email" name="email" placeholder="Email" aria-label="Email" required autocomplete="username">
+          <input type="password" id="password" name="password" placeholder="Password" aria-label="Password" required minlength="6" autocomplete="current-password">
           <button type="submit" id="signin-btn">Sign In</button>
         </div>
         <button type="button" id="signup-btn">Create account</button>
         <a class="preview-link" href="app/">Open app</a>
       </form>
-      <div id="auth-error"></div>
+      <div id="auth-error" role="alert"></div>
+      <p class="hero-more">Log slalom passes and buoy counts, trick runs and kneeboard days, then see how your ski club stacks up on the club boards.</p>
     </section>
   </div>
   <script src="js/splash-wall.js"></script>
