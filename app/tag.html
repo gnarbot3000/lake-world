@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FBFDFF">
+  <meta name="robots" content="noindex">
+  <title>Tag a run video · lake.world</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <script src="/js/ga.js"></script>
+  <link rel="stylesheet" href="tag.css">
+</head>
+<body>
+  <div class="app">
+    <header class="mast">
+      <a class="brand" href="../">lake.world</a>
+      <a class="back" href="index.html">Log</a>
+    </header>
+
+    <h1>Tag a run video</h1>
+    <p class="lede">Pick a slalom or trick video from this device. Scrub, tag what happened, and save the score. The video stays here and is not uploaded.</p>
+
+    <label class="file-btn">
+      Choose a run video
+      <input id="rv-file" type="file" accept="video/*">
+    </label>
+    <p class="file-name" id="rv-filename"></p>
+
+    <section id="rv-stage" hidden>
+      <video id="rv-video" playsinline preload="metadata" aria-label="Run video"></video>
+      <div class="transport">
+        <button type="button" id="rv-back" aria-label="Back half a second">−0.5s</button>
+        <button type="button" id="rv-play">Play</button>
+        <button type="button" id="rv-fwd" aria-label="Ahead half a second">+0.5s</button>
+        <p class="time" id="rv-time">0:00.0</p>
+      </div>
+      <input id="rv-scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Scrub the video">
+
+      <div class="modes" role="group" aria-label="Discipline">
+        <button type="button" id="rv-mode-slalom" aria-pressed="false">Slalom</button>
+        <button type="button" id="rv-mode-trick" aria-pressed="false">Trick</button>
+      </div>
+
+      <div class="hero">
+        <p class="kicker" id="rv-kicker">Score</p>
+        <p class="number" id="rv-score">—</p>
+        <p class="sub" id="rv-sub">Choose Slalom or Trick, then tag the run.</p>
+      </div>
+
+      <div id="rv-slalom" hidden>
+        <div class="pair">
+          <button type="button" id="rv-buoy">Buoy</button>
+          <button type="button" id="rv-fall">Fall/miss</button>
+        </div>
+        <p class="hint">Each Buoy is one you rounded. The score is those buoys before the fall, capped at 6.</p>
+        <label class="field" for="rv-partial">Partial buoy note</label>
+        <input id="rv-partial" type="text" maxlength="80" autocomplete="off" placeholder="Optional, stays with this tagged run">
+        <p class="label" id="rv-line-label">Line length</p>
+        <div class="chips" id="rv-lines" role="group" aria-labelledby="rv-line-label"></div>
+        <p class="label" id="rv-speed-label">Boat speed</p>
+        <div class="chips" id="rv-speeds" role="group" aria-labelledby="rv-speed-label"></div>
+      </div>
+
+      <div id="rv-trick" hidden>
+        <div class="pair" role="group" aria-label="Skis">
+          <button type="button" id="rv-ski-1" aria-pressed="true">1 ski</button>
+          <button type="button" id="rv-ski-2" aria-pressed="false">2 skis</button>
+        </div>
+        <div class="pair" role="group" aria-label="Pass">
+          <button type="button" id="rv-pass-0" aria-pressed="true">Pass 1</button>
+          <button type="button" id="rv-pass-1" aria-pressed="false">Pass 2</button>
+        </div>
+        <label class="field" for="rv-trick-select">Trick</label>
+        <select id="rv-trick-select"></select>
+        <div class="pair">
+          <button type="button" id="rv-tag">Tag</button>
+          <button type="button" id="rv-tag-rev">Tag reverse</button>
+        </div>
+        <p class="hint">Same IWWF 2026 chart as the trick log. Each trick number scores once as a basic and once as a reverse, reverses stay in the same pass, and at most 6 flips score.</p>
+      </div>
+
+      <div class="list-head">
+        <h2>Tags</h2>
+        <button type="button" id="rv-undo" disabled>Undo</button>
+      </div>
+      <p class="hint" id="rv-empty">No tags yet.</p>
+      <ul class="tags" id="rv-list"></ul>
+      <button type="button" class="save" id="rv-save" disabled>Save run</button>
+      <p class="status" id="rv-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="saved" aria-labelledby="rv-saved-title">
+      <h2 id="rv-saved-title">Tagged runs on this device</h2>
+      <p class="hint" id="rv-runs-empty">No tagged runs yet.</p>
+      <ul class="runs" id="rv-runs"></ul>
+    </section>
+
+    <p class="foot">The video is not saved. A tagged run stores the file name, length, score, and tags only.</p>
+  </div>
+  <script src="/js/trick-chart.js"></script>
+  <script src="tag.js"></script>
+</body>
+</html>
