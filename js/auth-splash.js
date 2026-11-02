@@ -18,6 +18,8 @@
   }
   if (openAuth) openAuth.addEventListener("click", function () { showAuth(true); });
   if (navSignin) navSignin.addEventListener("click", function () { showAuth(true); });
+  // Guide pages link to /#signup so their "Create a free account" lands on the open form.
+  if (location.hash === "#signup") showAuth(true);
   if (/[?&](invite|token)=/.test(location.search || "")) {
     showAuth(false);
     var tryIt = document.getElementById("try-it");
