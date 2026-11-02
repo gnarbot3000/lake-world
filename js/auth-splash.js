@@ -6,11 +6,22 @@
   var form = document.getElementById("login-form");
   var sb = null;
 
-  if (navSignin) {
-    navSignin.addEventListener("click", function () {
-      var email = document.getElementById("email");
-      if (email) email.focus();
-    });
+  // The sign-in form stays tucked away until someone asks for it, so a first visit leads with
+  // trying the log. Invite links open it right away.
+  var openAuth = document.getElementById("open-auth");
+  var panel = document.getElementById("auth-panel");
+  function showAuth(focus) {
+    if (panel) panel.hidden = false;
+    if (openAuth) openAuth.setAttribute("aria-expanded", "true");
+    var email = document.getElementById("email");
+    if (focus && email) email.focus();
+  }
+  if (openAuth) openAuth.addEventListener("click", function () { showAuth(true); });
+  if (navSignin) navSignin.addEventListener("click", function () { showAuth(true); });
+  if (/[?&](invite|token)=/.test(location.search || "")) {
+    showAuth(false);
+    var tryIt = document.getElementById("try-it");
+    if (tryIt) tryIt.href = "app/" + inviteQuery();
   }
 
   // Supabase auth errors read like server logs; say what to do instead.

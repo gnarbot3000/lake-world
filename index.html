@@ -119,6 +119,8 @@
       font-size: 1rem;
     }
     .nav-signin:hover { background: #ff6a26; }
+    .nav-signin { min-height: 44px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.5); }
+    .nav-signin:hover { background: rgba(20,20,20,.6); }
     .hero {
       position: relative;
       z-index: 3;
@@ -187,28 +189,16 @@
       font-size: 1rem;
     }
     #signup-btn:hover { background: #ff6a26; }
-    .hero .hero-more { margin: 18px auto 0; max-width: 34em; font-size: .85rem; line-height: 1.45; color: rgba(255,255,255,.72); }
-    .preview-link {
-      display: inline-block;
-      margin-top: 14px;
-      padding: 10px 18px;
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.45);
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 700;
-      background: rgba(0,0,0,.28);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .preview-link:hover { background: rgba(20,20,20,.45); }
+    .hero .hero-more { margin: 18px auto 0; max-width: 34em; font-size: .9rem; line-height: 1.45; color: rgba(255,255,255,.88); }
     #auth-error {
       color: #ff6b6b;
       margin-top: 12px;
       display: none;
     }
     @media (max-width: 640px) {
+      .hero { margin-top: 12vh; }
+      .hero h1 { font-size: 2.6rem; }
+      .hero p { font-size: 1.05rem; }
       .poster-row img { width: 96px; height: 96px; }
       .splash-nav { padding: 16px; }
       .auth-row { flex-direction: column; align-items: stretch; }
@@ -219,16 +209,42 @@
         max-height: 44px;
       }
       #signin-btn, #signup-btn { width: 100%; height: 48px; padding: 10px 16px; }
-      .preview-link { min-height: 48px; line-height: 26px; }
-      .preview-link { display: block; width: 100%; box-sizing: border-box; text-align: center; }
     }
     @media (prefers-reduced-motion: reduce) {
       .poster-row { animation: none; }
     }
-    .faq { max-width: 640px; margin: 0 auto; padding: 40px 24px 56px; line-height: 1.55; }
-    .faq h2 { font-size: 1.5rem; margin: 0 0 8px; }
-    .faq h3 { font-size: 1.05rem; margin: 22px 0 4px; }
-    .faq p { margin: 0; color: #ccc; }
+    /* first visit: try it first, account second */
+    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 360px; margin: 0 auto; }
+    .cta-try { display: block; width: 100%; min-height: 52px; line-height: 52px; background: #FC5200; color: #fff; border-radius: 10px; font-weight: 800; font-size: 1.05rem; text-decoration: none; box-shadow: 0 10px 30px rgba(252,82,0,.35); }
+    .cta-try:hover { background: #ff6a26; }
+    .cta-note { margin: 0; font-size: .85rem; color: rgba(255,255,255,.85); text-shadow: 0 1px 8px rgba(0,0,0,.9); }
+    .hero h1, .hero > p, .hero .hero-more { text-shadow: 0 2px 14px rgba(0,0,0,.85); }
+    .hero::before { content: ""; position: absolute; z-index: -1; inset: -40px -10px; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.62), rgba(0,0,0,0) 70%); pointer-events: none; }
+    #open-auth { width: 100%; min-height: 48px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.5); border-radius: 10px; font-weight: 700; font-size: 1rem; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    #open-auth[aria-expanded=true] { display: none; }
+    .auth-panel { margin-top: 14px; padding: 16px; background: rgba(12,12,12,.72); border: 1px solid rgba(255,255,255,.16); border-radius: 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: lw-in .22s ease-out; }
+    .auth-panel[hidden] { display: none; }
+    .auth-panel .auth-title { margin: 0 0 10px; font-size: .95rem; font-weight: 700; color: #fff; }
+    @keyframes lw-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .steps { max-width: 640px; margin: 0 auto; padding: 44px 20px 8px; }
+    .steps h2 { font-size: 1.5rem; margin: 0 0 16px; letter-spacing: -0.02em; }
+    .steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .steps li { display: grid; grid-template-columns: 40px 1fr; gap: 4px 14px; align-items: start; padding: 16px; background: #0d0d0d; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; }
+    .steps .n { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(252,82,0,.14); color: #FC5200; font-weight: 800; }
+    .steps b { font-size: 1.02rem; }
+    .steps li p { margin: 0; color: #bbb; font-size: .95rem; line-height: 1.45; }
+    .faq { max-width: 640px; margin: 0 auto; padding: 36px 20px 56px; line-height: 1.55; }
+    .faq h2 { font-size: 1.5rem; margin: 0 0 10px; letter-spacing: -0.02em; }
+    .faq details { border-top: 1px solid rgba(255,255,255,.12); }
+    .faq details:last-of-type { border-bottom: 1px solid rgba(255,255,255,.12); }
+    .faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 52px; padding: 12px 0; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; font-size: 1.4rem; font-weight: 400; color: #FC5200; transition: transform .2s; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq h3 { font-size: 1.05rem; margin: 0; }
+    .faq p { margin: 0 0 16px; color: #ccc; }
+    .foot { text-align: center; padding: 0 20px 40px; color: rgba(255,255,255,.5); font-size: .85rem; }
+    .foot a { color: rgba(255,255,255,.75); display: inline-block; padding: 12px 8px; min-height: 44px; }
   </style>
 </head>
 
@@ -247,33 +263,59 @@
     <section class="hero" id="auth-section">
       <h1>Log the lake.</h1>
       <p>A water ski log for slalom, tricks and your club. Free to start.</p>
-      <form id="login-form">
-        <div class="auth-row">
-          <input type="email" id="email" name="email" placeholder="Email" aria-label="Email" required autocomplete="username">
-          <input type="password" id="password" name="password" placeholder="Password" aria-label="Password" required minlength="6" autocomplete="current-password">
-          <button type="submit" id="signin-btn">Sign In</button>
-        </div>
-        <button type="button" id="signup-btn">Create account</button>
-        <a class="preview-link" href="app/">Try it without an account</a>
-      </form>
-      <div id="auth-error" role="alert"></div>
+      <div class="cta-row">
+        <a class="cta-try" id="try-it" href="app/">Try it now</a>
+        <p class="cta-note">No account needed. Your log saves on this device.</p>
+        <button type="button" id="open-auth" aria-expanded="false" aria-controls="auth-panel">Sign in or create an account</button>
+      </div>
+      <div class="auth-panel" id="auth-panel" hidden>
+        <p class="auth-title">Save your log and join your club</p>
+        <form id="login-form">
+          <div class="auth-row">
+            <input type="email" id="email" name="email" placeholder="Email" aria-label="Email" required autocomplete="username">
+            <input type="password" id="password" name="password" placeholder="Password" aria-label="Password" required minlength="6" autocomplete="current-password">
+            <button type="submit" id="signin-btn">Sign In</button>
+          </div>
+          <button type="button" id="signup-btn">Create account</button>
+        </form>
+        <div id="auth-error" role="alert"></div>
+      </div>
       <p class="hero-more">Log slalom passes and buoy counts, trick runs and kneeboard days, then see how your ski club stacks up on the club boards.</p>
     </section>
   </div>
+  <section class="steps" aria-labelledby="steps-h">
+    <h2 id="steps-h">How it works</h2>
+    <ol>
+      <li><span class="n">1</span><b>Log a set</b><p>Line length, boat speed and buoys for slalom, or the tricks you landed.</p></li>
+      <li><span class="n">2</span><b>Watch your season</b><p>Your best passes and trick list build up set by set.</p></li>
+      <li><span class="n">3</span><b>Join your club</b><p>Ask to join your ski club and see where you stand on the club board.</p></li>
+    </ol>
+  </section>
   <section class="faq" aria-labelledby="faq-h">
     <h2 id="faq-h">Questions</h2>
-    <h3>What is lake.world?</h3>
-    <p>A water ski log for you and your ski club. Log your slalom sets and kneeboard tricks, and see how everyone in the club is doing on the club board.</p>
-    <h3>What do I log for slalom?</h3>
-    <p>Pick your line length, boat speed and buoy count, then submit your best run for the set. A faster boat at the same line counts as harder, so 4 buoys at 30 mph beats 6 at 28 mph. Speed shows in mph or kph.</p>
-    <h3>What about kneeboard?</h3>
-    <p>Search for a trick or write in your own, and build up the list of tricks you've landed.</p>
-    <h3>How do club boards work?</h3>
-    <p>Sign in, pick your club and ask to join. A club admin approves you before you can see the roster, so only members see who's on it.</p>
-    <h3>Do I need to install an app?</h3>
-    <p>No. lake.world runs in the browser on your phone or computer, so you can log a set from the dock.</p>
+    <details>
+      <summary><h3>What is lake.world?</h3></summary>
+      <p>A water ski log for you and your ski club. Log your slalom sets and kneeboard tricks, and see how everyone in the club is doing on the club board.</p>
+    </details>
+    <details>
+      <summary><h3>What do I log for slalom?</h3></summary>
+      <p>Pick your line length, boat speed and buoy count, then submit your best run for the set. A faster boat at the same line counts as harder, so 4 buoys at 30 mph beats 6 at 28 mph. Speed shows in mph or kph.</p>
+    </details>
+    <details>
+      <summary><h3>What about kneeboard?</h3></summary>
+      <p>Search for a trick or write in your own, and build up the list of tricks you've landed.</p>
+    </details>
+    <details>
+      <summary><h3>How do club boards work?</h3></summary>
+      <p>Sign in, pick your club and ask to join. A club admin approves you before you can see the roster, so only members see who's on it.</p>
+    </details>
+    <details>
+      <summary><h3>Do I need to install an app?</h3></summary>
+      <p>No. lake.world runs in the browser on your phone or computer, so you can log a set from the dock.</p>
+    </details>
   </section>
+  <p class="foot"><a href="app/">Open the log</a></p>
   <script src="js/splash-wall.js"></script>
-  <script src="js/auth-splash.js"></script>
+  <script src="js/auth-splash.js?v=2"></script>
 </body>
 </html>
