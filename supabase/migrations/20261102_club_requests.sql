@@ -10,8 +10,13 @@
 --   WITH CHECK). No SELECT/UPDATE/DELETE grant and no select policy, so the
 --   public can never read requests back. Joel reads rows in the dashboard.
 --   A BEFORE INSERT trigger silently drops honeypot rows, trims text, and
---   rate-limits (per email, per hashed client IP, and a global cap).
+--   rate-limits (per email, and a global cap).
+--   Stored data is only what the person typed in the form, plus server-set
+--   id/created_at/status. Nothing about the device or IP is read or stored.
 --   No email is sent by anything here.
+--
+-- Retention: rows are reviewed and deleted after 90 days (manual, by Joel in
+-- the dashboard; see supabase/README.md). Recorded on the table as a comment.
 
 begin;
 
@@ -27,7 +32,6 @@ create table if not exists public.club_requests (
   country       text,
   notes         text,
   website       text,            -- honeypot; always null in stored rows
-  ip_hash       text,            -- md5(salt || client ip), for rate limiting only
   status        text not null default 'new',
   constraint club_requests_name_chk    check (char_length(club_name) between 2 and 100),
   constraint club_requests_email_chk   check (char_length(contact_email) between 6 and 254
@@ -43,9 +47,11 @@ create table if not exists public.club_requests (
   constraint club_requests_status_chk  check (status in ('new', 'contacted', 'set_up', 'declined'))
 );
 
+comment on table public.club_requests is
+  '/for-clubs requests. Only what the person typed; no IP or device data. Retention: reviewed and deleted after 90 days.';
+
 create index if not exists club_requests_created_idx on public.club_requests (created_at desc);
 create index if not exists club_requests_email_idx   on public.club_requests (lower(contact_email), created_at desc);
-create index if not exists club_requests_ip_idx      on public.club_requests (ip_hash, created_at desc);
 
 create or replace function public.club_requests_before_insert()
 returns trigger
@@ -53,9 +59,6 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  hdrs json;
-  ip text;
 begin
   -- Honeypot: a filled hidden field means a bot. Drop the row silently.
   if coalesce(btrim(new.website), '') <> '' then
@@ -74,15 +77,6 @@ begin
   new.country := nullif(new.country, '');
   select coalesce(array_agg(distinct s), '{}') into new.sports from unnest(new.sports) s;
 
-  begin
-    hdrs := current_setting('request.headers', true)::json;
-  exception when others then
-    hdrs := null;
-  end;
-  ip := split_part(coalesce(hdrs ->> 'cf-connecting-ip', hdrs ->> 'x-forwarded-for', ''), ',', 1);
-  new.ip_hash := case when btrim(ip) = '' then null
-                      else md5('lake.world/club_requests:' || btrim(ip)) end;
-
   -- Rate limits (simple; raise -> PostgREST 4xx -> the page shows its fallback).
   if (select count(*) from public.club_requests
        where created_at > now() - interval '10 minutes') >= 20 then
@@ -91,11 +85,6 @@ begin
   if (select count(*) from public.club_requests
        where lower(contact_email) = new.contact_email
          and created_at > now() - interval '1 day') >= 3 then
-    raise exception 'rate_limited' using errcode = 'P0001';
-  end if;
-  if new.ip_hash is not null and (select count(*) from public.club_requests
-       where ip_hash = new.ip_hash
-         and created_at > now() - interval '1 hour') >= 5 then
     raise exception 'rate_limited' using errcode = 'P0001';
   end if;
 
