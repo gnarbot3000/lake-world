@@ -48,3 +48,18 @@ td { color: #ccc; }
 .tc-x { min-height: 44px; min-width: 44px; background: none; color: #ccc; border: 0; font: inherit; cursor: pointer; }
 .tc-total { font-size: 1.15rem; color: #fff; }
 .tc-note { color: #aaa; font-size: .88rem; }
+.club-form { background: #0d0d0d; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 16px; margin: 12px 0; }
+.club-form label, .club-form legend { display: block; color: #ddd; font-size: .95rem; margin: 12px 0 4px; }
+.club-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.club-form input[type="text"], .club-form input[type="email"], .club-form select, .club-form textarea { width: 100%; min-height: 44px; background: #111; color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 16px; }
+.club-form textarea { min-height: 96px; resize: vertical; }
+.club-checks { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.club-checks label { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; }
+.club-checks input { width: 20px; height: 20px; }
+.club-hint { color: #999; font-size: .85rem; margin: 2px 0 0; }
+.club-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.club-submit { margin-top: 16px; width: 100%; min-height: 52px; background: #FC5200; color: #fff; border: 0; border-radius: 10px; font: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer; }
+.club-submit[disabled] { opacity: .6; cursor: default; }
+.club-status { margin: 12px 0; padding: 12px 14px; border-radius: 10px; color: #fff; }
+.club-status-ok { background: rgba(46,160,67,.18); border: 1px solid rgba(46,160,67,.6); }
+.club-status-err { background: rgba(252,82,0,.12); border: 1px solid rgba(252,82,0,.5); }
