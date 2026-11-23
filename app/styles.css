@@ -2353,3 +2353,12 @@ body.photo-lightbox-open { overflow: hidden; }
   font-weight: 600;
   color: var(--mute);
 }
+
+/* Says why Submit set is greyed out until a buoy count is picked. */
+.submit-set-hint {
+  margin: 0.4rem 0 0;
+  color: var(--mute);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.submit-set-hint[hidden] { display: none; }
