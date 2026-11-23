@@ -2535,6 +2535,8 @@
     var btn = document.getElementById("submit-set-btn");
     if (!btn) return;
     btn.disabled = parseBuoys(draftBuoys) == null;
+    var hint = document.getElementById("submit-set-hint");
+    if (hint) hint.hidden = !btn.disabled;
   }
 
   // After a buoy pick on a phone, Submit can sit just below the fold.
