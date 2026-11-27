@@ -1,0 +1,28 @@
+name = "lake-world-mocreo-temp"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Create the KV namespace once in Cloudflare, then paste its ID here before deploying:
+#   wrangler kv namespace create LAKE_TEMP_KV
+[[kv_namespaces]]
+binding = "LAKE_TEMP_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Optional: polls the MOCREO Smart System REST API every 15 minutes when
+# MOCREO_API_KEY, MOCREO_ASSET_ID, and MOCREO_DEVICE_ID secrets are set.
+# If you use MQTT-bridge webhook ingest only, the cron exits quietly.
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+ALLOWED_ORIGIN = "https://lake.world"
+STALE_AFTER_MINUTES = "90"
+LAKE_LABEL = "Water temp"
+
+# Required secrets (set via `wrangler secret put <NAME>`, NEVER commit values):
+# - Webhook ingest mode:
+#     INGEST_WEBHOOK_SECRET   (random 32+ byte bearer/header token)
+# - REST API polling mode (MOCREO Smart System v1, X-API-Key: mok_...):
+#     MOCREO_API_KEY
+#     MOCREO_ASSET_ID
+#     MOCREO_DEVICE_ID
