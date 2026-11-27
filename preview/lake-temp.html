@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/js/ga.js"></script>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>Live Water Temp Preview | lake.world</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/guide.css?v=1">
+  <style>
+    .lt-card { background: #0d0d0d; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 16px 18px; max-width: 340px; }
+    .lt-card.lt-stale { border-color: rgba(255,138,76,.5); }
+    .lt-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .lt-label { color: #ccc; font-size: .95rem; font-weight: 600; }
+    .lt-unit-btn { min-height: 44px; padding: 0 12px; background: #1a1a1a; color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
+    .lt-value { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; color: #fff; margin: 6px 0 4px; }
+    .lt-meta { color: #aaa; font-size: .88rem; }
+    .lt-demo-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
+  </style>
+</head>
+<body>
+  <header class="g-nav">
+    <a class="wordmark" href="/">lake.world</a>
+    <a class="g-open" href="/app/">Open the log</a>
+  </header>
+  <main>
+    <h1>Live water temp widget preview</h1>
+    <p class="lede">Draft preview for the MOCREO H5Pro-LS2D sensor widget. Not linked publicly; uses sample readings below until the Cloudflare Worker is deployed.</p>
+
+    <div class="lt-demo-bar" role="group" aria-label="Sample sensor states">
+      <button type="button" class="tc-btn" id="btn-live">Fresh reading</button>
+      <button type="button" class="tc-btn" id="btn-stale">Stale reading</button>
+      <button type="button" class="tc-btn" id="btn-offline">Sensor offline</button>
+    </div>
+
+    <div id="preview-mount" data-label="Ski lake water temp"></div>
+  </main>
+
+  <script src="/js/lake-temp-widget.js"></script>
+  <script>
+    (function () {
+      var mount = document.getElementById("preview-mount");
+      var samples = {
+        live: { ok: true, tempF: 71.2, tempC: 21.8, updatedAt: new Date().toISOString(), ageMinutes: 4, stale: false, online: true },
+        stale: { ok: true, tempF: 68.4, tempC: 20.2, updatedAt: new Date(Date.now() - 125 * 60000).toISOString(), ageMinutes: 125, stale: true, online: true },
+        offline: { ok: true, tempF: 66.0, tempC: 18.9, updatedAt: new Date(Date.now() - 240 * 60000).toISOString(), ageMinutes: 240, stale: true, online: false }
+      };
+      function show(key) {
+        if (window.LakeTempWidget) {
+          window.LakeTempWidget.renderWidget(mount, samples[key], "Ski lake water temp");
+        }
+      }
+      document.getElementById("btn-live").addEventListener("click", function () { show("live"); });
+      document.getElementById("btn-stale").addEventListener("click", function () { show("stale"); });
+      document.getElementById("btn-offline").addEventListener("click", function () { show("offline"); });
+      show("live");
+    })();
+  </script>
+</body>
+</html>
